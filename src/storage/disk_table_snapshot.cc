@@ -18,13 +18,13 @@
 
 
 
-namespace rtidb {
+namespace openmldb {
 namespace storage {
 
 const std::string MANIFEST = "MANIFEST"; // NOLINT
 
 DiskTableSnapshot::DiskTableSnapshot(uint32_t tid, uint32_t pid,
-                                     ::rtidb::common::StorageMode storage_mode,
+                                     ::openmldb::common::StorageMode storage_mode,
                                      const std::string& db_root_path)
     : Snapshot(tid, pid),
       storage_mode_(storage_mode),
@@ -34,7 +34,7 @@ DiskTableSnapshot::DiskTableSnapshot(uint32_t tid, uint32_t pid,
 bool DiskTableSnapshot::Init() {
     snapshot_path_ = db_root_path_ + "/" + std::to_string(tid_) + "_" +
                      std::to_string(pid_) + "/snapshot/";
-    if (!::rtidb::base::MkdirRecur(snapshot_path_)) {
+    if (!::openmldb::base::MkdirRecur(snapshot_path_)) {
         PDLOG(WARNING, "fail to create db meta path %s",
               snapshot_path_.c_str());
         return false;
@@ -61,15 +61,15 @@ int DiskTableSnapshot::MakeSnapshot(std::shared_ptr<Table> table,
     making_snapshot_.store(true, std::memory_order_release);
     int ret = 0;
     do {
-        std::string now_time = ::rtidb::base::GetNowTime();
+        std::string now_time = ::openmldb::base::GetNowTime();
         std::string snapshot_dir_name =
             now_time.substr(0, now_time.length() - 2);
         std::string snapshot_dir = snapshot_path_ + snapshot_dir_name;
         std::string snapshot_dir_tmp = snapshot_dir + ".tmp";
-        if (::rtidb::base::IsExists(snapshot_dir_tmp)) {
+        if (::openmldb::base::IsExists(snapshot_dir_tmp)) {
             PDLOG(WARNING, "checkpoint dir[%s] is exist",
                   snapshot_dir_tmp.c_str());
-            if (!::rtidb::base::RemoveDir(snapshot_dir_tmp)) {
+            if (!::openmldb::base::RemoveDir(snapshot_dir_tmp)) {
                 PDLOG(WARNING, "delete checkpoint failed. checkpoint dir[%s]",
                       snapshot_dir_tmp.c_str());
                 break;
@@ -86,10 +86,10 @@ int DiskTableSnapshot::MakeSnapshot(std::shared_ptr<Table> table,
                   snapshot_dir_tmp.c_str());
             break;
         }
-        if (::rtidb::base::IsExists(snapshot_dir)) {
+        if (::openmldb::base::IsExists(snapshot_dir)) {
             std::string snapshot_dir_bak = snapshot_dir + ".bak";
-            if (::rtidb::base::IsExists(snapshot_dir_bak)) {
-                if (!::rtidb::base::RemoveDir(snapshot_dir_bak)) {
+            if (::openmldb::base::IsExists(snapshot_dir_bak)) {
+                if (!::openmldb::base::RemoveDir(snapshot_dir_bak)) {
                     PDLOG(
                         WARNING,
                         "delete checkpoint bak failed. checkpoint bak dir[%s]",
@@ -97,26 +97,26 @@ int DiskTableSnapshot::MakeSnapshot(std::shared_ptr<Table> table,
                     break;
                 }
             }
-            if (!::rtidb::base::Rename(snapshot_dir, snapshot_dir_bak)) {
+            if (!::openmldb::base::Rename(snapshot_dir, snapshot_dir_bak)) {
                 PDLOG(WARNING,
                       "rename checkpoint failed. checkpoint bak dir[%s]",
                       snapshot_dir_bak.c_str());
                 break;
             }
         }
-        if (!::rtidb::base::Rename(snapshot_dir_tmp, snapshot_dir)) {
+        if (!::openmldb::base::Rename(snapshot_dir_tmp, snapshot_dir)) {
             PDLOG(WARNING, "rename checkpoint failed. checkpoint dir[%s]",
                   snapshot_dir.c_str());
             break;
         }
-        ::rtidb::api::Manifest manifest;
+        ::openmldb::api::Manifest manifest;
         GetLocalManifest(snapshot_path_ + MANIFEST, manifest);
         if (GenManifest(snapshot_dir_name, record_count, cur_offset, term_) ==
             0) {
             if (manifest.has_name() && manifest.name() != snapshot_dir) {
                 DEBUGLOG("delete old checkpoint[%s]",
                       manifest.name().c_str());
-                if (!::rtidb::base::RemoveDir(snapshot_path_ +
+                if (!::openmldb::base::RemoveDir(snapshot_path_ +
                                               manifest.name())) {
                     PDLOG(WARNING,
                           "delete checkpoint failed. checkpoint dir[%s]",
@@ -129,7 +129,7 @@ int DiskTableSnapshot::MakeSnapshot(std::shared_ptr<Table> table,
         } else {
             PDLOG(WARNING, "GenManifest failed. delete checkpoint[%s]",
                   snapshot_dir.c_str());
-            ::rtidb::base::RemoveDir(snapshot_dir);
+            ::openmldb::base::RemoveDir(snapshot_dir);
         }
     } while (false);
     making_snapshot_.store(false, std::memory_order_release);
@@ -142,4 +142,4 @@ bool DiskTableSnapshot::Recover(std::shared_ptr<Table> table,
 }
 
 }  // namespace storage
-}  // namespace rtidb
+}  // namespace openmldb
