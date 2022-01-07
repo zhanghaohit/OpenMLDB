@@ -338,8 +338,8 @@ bool DiskTable::Delete(const std::string& pk, uint32_t idx) {
             if (!ts_col) {
                 return false;
             }
-            std::string combine_key1 = CombineKeyTs(pk, UINT64_MAX, ts_col->GetTsIdx());
-            std::string combine_key2 = CombineKeyTs(pk, 0, ts_col->GetTsIdx());
+            std::string combine_key1 = CombineKeyTs(pk, UINT64_MAX, ts_col->GetId());
+            std::string combine_key2 = CombineKeyTs(pk, 0, ts_col->GetId());
             batch.DeleteRange(cf_hs_[idx + 1], rocksdb::Slice(combine_key1),
                               rocksdb::Slice(combine_key2));
         }
@@ -454,7 +454,7 @@ void DiskTable::GcHead() {
                 if (ts_col) {
                     auto lat_ttl = index->GetTTL()->lat_ttl;
                     if (lat_ttl > 0) {
-                        ttl_map.emplace(ts_col->GetTsIdx(), lat_ttl);
+                        ttl_map.emplace(ts_col->GetId(), lat_ttl);
                         need_ttl = true;
                     }
                 }
@@ -621,7 +621,7 @@ TableIterator* DiskTable::NewIterator(uint32_t idx, const std::string& pk,
         if (!ts_col) {
             return NULL;
         }
-        return NewIterator(idx, ts_col->GetTsIdx(), pk, ticket);
+        return NewIterator(idx, ts_col->GetId(), pk, ticket);
     }
     rocksdb::ReadOptions ro = rocksdb::ReadOptions();
     const rocksdb::Snapshot* snapshot = db_->GetSnapshot();
@@ -666,7 +666,7 @@ TableIterator* DiskTable::NewTraverseIterator(uint32_t index) {
         if (!ts_col) {
             return NULL;
         }
-        return NewTraverseIterator(index, ts_col->GetTsIdx());
+        return NewTraverseIterator(index, ts_col->GetId());
     }
     auto ttl = index_def->GetTTL();
     uint64_t expire_time = GetExpireTime(*ttl);
