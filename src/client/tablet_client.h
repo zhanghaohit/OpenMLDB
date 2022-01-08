@@ -97,7 +97,8 @@ class TabletClient : public Client {
 
     bool Get(uint32_t tid, uint32_t pid, const std::string& pk, uint64_t time, std::string& value,  // NOLINT
              uint64_t& ts,                                                                          // NOLINT
-             std::string& msg);                        ;                                             // NOLINT
+             std::string& msg);
+    ;  // NOLINT
 
     bool Get(uint32_t tid, uint32_t pid, const std::string& pk, uint64_t time, const std::string& idx_name,
              std::string& value,  // NOLINT
@@ -229,8 +230,8 @@ class TabletClient : public Client {
                   std::shared_ptr<TaskInfo> task_info);
 
     base::Status AddMultiIndex(uint32_t tid, uint32_t pid,
-            const std::vector<::openmldb::common::ColumnKey>& column_keys,
-            std::shared_ptr<TaskInfo> task_info);
+                               const std::vector<::openmldb::common::ColumnKey>& column_keys,
+                               std::shared_ptr<TaskInfo> task_info);
 
     bool DumpIndexData(uint32_t tid, uint32_t pid, uint32_t partition_num,
                        const ::openmldb::common::ColumnKey& column_key, uint32_t idx,
@@ -248,7 +249,7 @@ class TabletClient : public Client {
                           std::shared_ptr<TaskInfo> task_info);
 
     bool ExtractMultiIndexData(uint32_t tid, uint32_t pid, uint32_t partition_num,
-                          const std::vector<::openmldb::common::ColumnKey>& column_key_vec);
+                               const std::vector<::openmldb::common::ColumnKey>& column_key_vec);
 
     bool CancelOP(const uint64_t op_id);
 

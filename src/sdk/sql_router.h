@@ -153,11 +153,9 @@ class SQLRouter {
     virtual ::openmldb::base::Status ShowJobs(const bool only_unfinished,
                                               std::vector<::openmldb::taskmanager::JobInfo>& job_infos) = 0;
 
-    virtual ::openmldb::base::Status ShowJob(const int id,
-                                             ::openmldb::taskmanager::JobInfo& job_info) = 0;
+    virtual ::openmldb::base::Status ShowJob(const int id, ::openmldb::taskmanager::JobInfo& job_info) = 0;
 
-    virtual ::openmldb::base::Status StopJob(const int id,
-                                             ::openmldb::taskmanager::JobInfo& job_info) = 0;
+    virtual ::openmldb::base::Status StopJob(const int id, ::openmldb::taskmanager::JobInfo& job_info) = 0;
 
     virtual ::openmldb::base::Status ExecuteOfflineQuery(const std::string& sql,
                                                          const std::map<std::string, std::string>& config,

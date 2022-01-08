@@ -76,8 +76,8 @@ class RowCodec {
     }
 
     static ::openmldb::base::Status EncodeRow(const std::vector<std::string> input_value, const Schema& schema,
-                                                 uint32_t version,
-                                                 std::string& row) {  // NOLINT
+                                              uint32_t version,
+                                              std::string& row) {  // NOLINT
         if (input_value.empty() || input_value.size() != (uint64_t)schema.size()) {
             return ::openmldb::base::Status(-1, "input error");
         }
@@ -106,9 +106,9 @@ class RowCodec {
         return ::openmldb::base::Status(0, "ok");
     }
 
-    static ::openmldb::base::Status EncodeRow(const std::map<std::string, std::string>& str_map,
-                                                 const Schema& schema, int32_t version,
-                                                 std::string& row) {  // NOLINT
+    static ::openmldb::base::Status EncodeRow(const std::map<std::string, std::string>& str_map, const Schema& schema,
+                                              int32_t version,
+                                              std::string& row) {  // NOLINT
         if (str_map.empty() || str_map.size() != (uint64_t)schema.size()) {
             return ::openmldb::base::Status(-1, "input error");
         }
@@ -142,8 +142,8 @@ class RowCodec {
     }
 
     static ::openmldb::base::Status EncodeRow(const std::vector<std::string>& input_value,
-                                                 const std::vector<::openmldb::codec::ColumnDesc>& columns,
-                                                 int modify_times, std::string* row) {
+                                              const std::vector<::openmldb::codec::ColumnDesc>& columns,
+                                              int modify_times, std::string* row) {
         if (input_value.size() != columns.size()) {
             return ::openmldb::base::Status(-1, "input error");
         }
@@ -482,8 +482,9 @@ static inline void Decode(const std::string* str, std::vector<std::pair<uint64_t
     }
 }
 
-static inline void DecodeFull(const std::string* str,
-                         std::map<std::string, std::vector<std::pair<uint64_t, std::string*>>>& value_map) { // NOLINT
+static inline void DecodeFull(
+    const std::string* str,
+    std::map<std::string, std::vector<std::pair<uint64_t, std::string*>>>& value_map) {  // NOLINT
     const char* buffer = str->c_str();
     uint32_t total_size = str->length();
     DEBUGLOG("total size %u %s", total_size, ::openmldb::base::DebugString(*str).c_str());

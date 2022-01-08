@@ -70,8 +70,7 @@ bool TabletClient::Query(const std::string& db, const std::string& sql, const st
 }
 
 bool TabletClient::Query(const std::string& db, const std::string& sql,
-                         const std::vector<openmldb::type::DataType>& parameter_types,
-                         const std::string& parameter_row,
+                         const std::vector<openmldb::type::DataType>& parameter_types, const std::string& parameter_row,
                          brpc::Controller* cntl, ::openmldb::api::QueryResponse* response, const bool is_debug) {
     if (cntl == NULL || response == NULL) return false;
     ::openmldb::api::QueryRequest request;
@@ -1098,8 +1097,8 @@ bool TabletClient::AddIndex(uint32_t tid, uint32_t pid, const ::openmldb::common
 }
 
 base::Status TabletClient::AddMultiIndex(uint32_t tid, uint32_t pid,
-        const std::vector<::openmldb::common::ColumnKey>& column_keys,
-        std::shared_ptr<TaskInfo> task_info) {
+                                         const std::vector<::openmldb::common::ColumnKey>& column_keys,
+                                         std::shared_ptr<TaskInfo> task_info) {
     ::openmldb::api::AddIndexRequest request;
     ::openmldb::api::GeneralResponse response;
     request.set_tid(tid);
@@ -1215,7 +1214,7 @@ bool TabletClient::ExtractIndexData(uint32_t tid, uint32_t pid, uint32_t partiti
 }
 
 bool TabletClient::ExtractMultiIndexData(uint32_t tid, uint32_t pid, uint32_t partition_num,
-        const std::vector<::openmldb::common::ColumnKey>& column_key_vec) {
+                                         const std::vector<::openmldb::common::ColumnKey>& column_key_vec) {
     ::openmldb::api::ExtractMultiIndexDataRequest request;
     ::openmldb::api::GeneralResponse response;
     request.set_tid(tid);

@@ -1699,9 +1699,7 @@ bool SQLClusterRouter::UpdateOfflineTableInfo(const ::openmldb::nameserver::Tabl
     return taskmanager_client_ptr->ImportOfflineData(sql, config, default_db, job_info);
 }
 
-bool SQLClusterRouter::NotifyTableChange() {
-    return cluster_sdk_->TriggerNotify();
-}
+bool SQLClusterRouter::NotifyTableChange() { return cluster_sdk_->TriggerNotify(); }
 
 }  // namespace sdk
 }  // namespace openmldb

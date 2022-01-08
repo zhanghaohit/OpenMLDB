@@ -2015,9 +2015,8 @@ void TabletImpl::AppendEntries(RpcController* controller, const ::openmldb::api:
     uint64_t term = replicator->GetLeaderTerm();
     if (!follower_.load(std::memory_order_relaxed)) {
         if (!FLAGS_zk_cluster.empty() && request->term() < term) {
-            PDLOG(WARNING,
-                  "leader id not match. request term  %lu, cur term %lu, tid %u, pid %u",
-                  request->term(), term, tid, pid);
+            PDLOG(WARNING, "leader id not match. request term  %lu, cur term %lu, tid %u, pid %u", request->term(),
+                  term, tid, pid);
             response->set_code(::openmldb::base::ReturnCode::kFailToAppendEntriesToReplicator);
             response->set_msg("fail to append entries to replicator");
             return;
@@ -2030,8 +2029,8 @@ void TabletImpl::AppendEntries(RpcController* controller, const ::openmldb::api:
         response->set_log_offset(last_log_offset);
         if (!FLAGS_zk_cluster.empty() && request->term() > term) {
             replicator->SetLeaderTerm(request->term());
-            PDLOG(INFO, "get log_offset %lu and set term %lu. tid %u, pid %u",
-                    last_log_offset, request->term(), tid, pid);
+            PDLOG(INFO, "get log_offset %lu and set term %lu. tid %u, pid %u", last_log_offset, request->term(), tid,
+                  pid);
             return;
         }
         PDLOG(INFO, "first sync log_index! log_offset[%lu] tid[%u] pid[%u]", last_log_offset, tid, pid);
@@ -2041,7 +2040,7 @@ void TabletImpl::AppendEntries(RpcController* controller, const ::openmldb::api:
         const auto& entry = request->entries(i);
         if (entry.log_index() <= last_log_offset) {
             PDLOG(WARNING, "entry log_index %lu cur log_offset %lu tid %u pid %u", request->entries(i).log_index(),
-                    last_log_offset, tid, pid);
+                  last_log_offset, tid, pid);
             continue;
         }
         if (!replicator->ApplyEntry(entry)) {
@@ -3443,8 +3442,7 @@ int TabletImpl::CreateTableInternal(const ::openmldb::api::TableMeta* table_meta
     std::string table_db_path = GetDBPath(db_root_path, tid, pid);
     std::shared_ptr<LogReplicator> replicator;
     if (table->IsLeader()) {
-        replicator =
-            std::make_shared<LogReplicator>(tid, pid, table_db_path, real_ep_map, ReplicatorRole::kLeaderNode);
+        replicator = std::make_shared<LogReplicator>(tid, pid, table_db_path, real_ep_map, ReplicatorRole::kLeaderNode);
     } else {
         replicator = std::make_shared<LogReplicator>(tid, pid, table_db_path, std::map<std::string, std::string>(),
                                                      ReplicatorRole::kFollowerNode);
@@ -3464,8 +3462,8 @@ int TabletImpl::CreateTableInternal(const ::openmldb::api::TableMeta* table_meta
     if (!zk_cluster_.empty() && table_meta->mode() == ::openmldb::api::TableMode::kTableLeader) {
         replicator->SetLeaderTerm(table_meta->term());
     }
-    ::openmldb::storage::Snapshot* snapshot_ptr = new ::openmldb::storage::MemTableSnapshot(
-        tid, pid, replicator->GetLogPart(), db_root_path);
+    ::openmldb::storage::Snapshot* snapshot_ptr =
+        new ::openmldb::storage::MemTableSnapshot(tid, pid, replicator->GetLogPart(), db_root_path);
 
     if (!snapshot_ptr->Init()) {
         PDLOG(WARNING, "fail to init snapshot for tid %u, pid %u", tid, pid);
@@ -4490,8 +4488,8 @@ void TabletImpl::LoadIndexDataInternal(uint32_t tid, uint32_t pid, uint32_t cur_
 }
 
 void TabletImpl::ExtractMultiIndexData(RpcController* controller,
-        const ::openmldb::api::ExtractMultiIndexDataRequest* request,
-        ::openmldb::api::GeneralResponse* response, Closure* done) {
+                                       const ::openmldb::api::ExtractMultiIndexDataRequest* request,
+                                       ::openmldb::api::GeneralResponse* response, Closure* done) {
     brpc::ClosureGuard done_guard(done);
     uint32_t tid = request->tid();
     uint32_t pid = request->pid();
@@ -4506,17 +4504,16 @@ void TabletImpl::ExtractMultiIndexData(RpcController* controller,
             return;
         }
         if (table->GetTableStat() != ::openmldb::storage::kNormal) {
-            PDLOG(WARNING, "table state is %d, cannot extract index data. tid %u, pid %u",
-                  table->GetTableStat(), tid, pid);
-            base::SetResponseStatus(base::ReturnCode::kTableStatusIsNotKnormal,
-                    "table status is not kNormal", response);
+            PDLOG(WARNING, "table state is %d, cannot extract index data. tid %u, pid %u", table->GetTableStat(), tid,
+                  pid);
+            base::SetResponseStatus(base::ReturnCode::kTableStatusIsNotKnormal, "table status is not kNormal",
+                                    response);
             return;
         }
         snapshot = GetSnapshotUnLock(tid, pid);
         if (!snapshot) {
             PDLOG(WARNING, "snapshot is not exist. tid %u pid %u", tid, pid);
-            base::SetResponseStatus(base::ReturnCode::kSnapshotIsNotExist,
-                    "table snapshot is not exist", response);
+            base::SetResponseStatus(base::ReturnCode::kSnapshotIsNotExist, "table snapshot is not exist", response);
             return;
         }
     }
@@ -4562,17 +4559,16 @@ void TabletImpl::ExtractIndexData(RpcController* controller, const ::openmldb::a
                 break;
             }
             if (table->GetTableStat() != ::openmldb::storage::kNormal) {
-                PDLOG(WARNING, "table state is %d, cannot extract index data. tid %u, pid %u",
-                      table->GetTableStat(), tid, pid);
-                base::SetResponseStatus(base::ReturnCode::kTableStatusIsNotKnormal,
-                        "table status is not kNormal", response);
+                PDLOG(WARNING, "table state is %d, cannot extract index data. tid %u, pid %u", table->GetTableStat(),
+                      tid, pid);
+                base::SetResponseStatus(base::ReturnCode::kTableStatusIsNotKnormal, "table status is not kNormal",
+                                        response);
                 break;
             }
             snapshot = GetSnapshotUnLock(tid, pid);
             if (!snapshot) {
                 PDLOG(WARNING, "snapshot is not exist. tid %u pid %u", tid, pid);
-                base::SetResponseStatus(base::ReturnCode::kSnapshotIsNotExist,
-                        "table snapshot is not exist", response);
+                base::SetResponseStatus(base::ReturnCode::kSnapshotIsNotExist, "table snapshot is not exist", response);
                 break;
             }
         }
