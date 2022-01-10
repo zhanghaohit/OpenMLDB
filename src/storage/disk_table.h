@@ -176,7 +176,7 @@ class AbsoluteTTLCompactionFilter : public rocksdb::CompactionFilter {
                 if (!ts_col) {
                     return false;
                 }
-                if (ts_col->GetTsIdx() == static_cast<int>(ts_idx)) {
+                if (ts_col->GetId() == static_cast<int>(ts_idx)) {
                     real_ttl = index->GetTTL()->abs_ttl;
                     has_found = true;
                     break;
@@ -350,17 +350,19 @@ class DiskTable : public Table {
                                Ticket& ticket) override;
 
     TableIterator* NewIterator(uint32_t idx, int32_t ts_idx,
-                               const std::string& pk, Ticket& ticket) override;
+                               const std::string& pk, Ticket& ticket);
 
     TableIterator* NewTraverseIterator(uint32_t idx) override;
 
-    TableIterator* NewTraverseIterator(uint32_t idx, uint32_t ts_idx) override;
+    // TODO(litongxin) just remove override. may need to remove the function
+    TableIterator* NewTraverseIterator(uint32_t idx, uint32_t ts_idx);
 
-    ::fesql::vm::WindowIterator* NewWindowIterator(uint32_t idx) {
+
+    ::hybridse::vm::WindowIterator* NewWindowIterator(uint32_t idx) {
         return NULL;
     }
 
-    ::fesql::vm::WindowIterator* NewWindowIterator(uint32_t idx,
+    ::hybridse::vm::WindowIterator* NewWindowIterator(uint32_t idx,
                                                    uint32_t ts_idx) {
         return NULL;
     }

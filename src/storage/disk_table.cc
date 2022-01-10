@@ -360,39 +360,39 @@ bool DiskTable::Delete(const std::string& pk, uint32_t idx) {
     }
 }
 
-bool DiskTable::Get(uint32_t idx, const std::string& pk, uint64_t ts,
-                    uint32_t ts_idx, std::string& value) {
-    Ticket ticket;
-    auto it = NewIterator(idx, ts_idx, pk, ticket);
-    it->Seek(ts);
-    if ((it->Valid()) && (it->GetKey() == ts)) {
-        value = it->GetValue().ToString();
-        delete it;
-        return true;
-    } else {
-        delete it;
-        return false;
-    }
-}
+// bool DiskTable::Get(uint32_t idx, const std::string& pk, uint64_t ts,
+//                     uint32_t ts_idx, std::string& value) {
+//     Ticket ticket;
+//     auto it = NewIterator(idx, ts_idx, pk, ticket);
+//     it->Seek(ts);
+//     if ((it->Valid()) && (it->GetKey() == ts)) {
+//         value = it->GetValue().ToString();
+//         delete it;
+//         return true;
+//     } else {
+//         delete it;
+//         return false;
+//     }
+// }
 
-bool DiskTable::Get(uint32_t idx, const std::string& pk, uint64_t ts,
-                    std::string& value) {
-    Ticket ticket;
-    auto it = NewIterator(idx, pk, ticket);
-    it->Seek(ts);
-    if ((it->Valid()) && (it->GetKey() == ts)) {
-        value = it->GetValue().ToString();
-        delete it;
-        return true;
-    } else {
-        delete it;
-        return false;
-    }
-}
+// bool DiskTable::Get(uint32_t idx, const std::string& pk, uint64_t ts,
+//                     std::string& value) {
+//     Ticket ticket;
+//     auto it = NewIterator(idx, pk, ticket);
+//     it->Seek(ts);
+//     if ((it->Valid()) && (it->GetKey() == ts)) {
+//         value = it->GetValue().ToString();
+//         delete it;
+//         return true;
+//     } else {
+//         delete it;
+//         return false;
+//     }
+// }
 
-bool DiskTable::Get(const std::string& pk, uint64_t ts, std::string& value) {
-    return Get(0, pk, ts, value);
-}
+// bool DiskTable::Get(const std::string& pk, uint64_t ts, std::string& value) {
+//     return Get(0, pk, ts, value);
+// }
 
 bool DiskTable::LoadTable() {
     if (!InitFromMeta()) {
