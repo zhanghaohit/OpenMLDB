@@ -158,13 +158,7 @@ class Table {
 
     std::shared_ptr<IndexDef> GetPkIndex() { return table_index_.GetPkIndex(); }
 
-    TTLSt GetTTL() {
-        auto index = GetIndex(0);
-        if (index) {
-            return *(index->GetTTL());
-        }
-        return TTLSt(table_meta_.ttl());
-    }
+
 
     void SetTTL(const ::openmldb::storage::UpdateTTLMeta& ttl_meta);
 
