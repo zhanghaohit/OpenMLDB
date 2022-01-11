@@ -11,7 +11,7 @@
 #include "base/file_util.h"
 #include "gtest/gtest.h"
 #include "base/glog_wapper.h"  // NOLINT
-#include "timer.h"    // NOLINT
+#include "common/timer.h"    // NOLINT
 
 
 
@@ -502,10 +502,7 @@ TEST_F(DiskTableTest, TraverseIteratorCountTTL) {
         "t1", 7, 1, mapping, 5, ::openmldb::type::TTLType::kAbsoluteTime,
         ::openmldb::common::StorageMode::kHDD, FLAGS_hdd_root_path);
     ASSERT_TRUE(table->Init());
-    const auto& ttl = table->GetTTL();
-    ASSERT_EQ((int64_t)ttl.abs_ttl, 5 * 60 * 1000);
-    ASSERT_EQ((int64_t)ttl.lat_ttl, 0);
-    ASSERT_EQ(ttl.ttl_type, ::openmldb::storage::TTLType::kAbsoluteTime);
+    
     uint64_t cur_time = ::baidu::common::timer::get_micros() / 1000;
     for (int idx = 0; idx < 10; idx++) {
         std::string key = "test" + std::to_string(idx);
@@ -561,10 +558,6 @@ TEST_F(DiskTableTest, TraverseIteratorLatest) {
         "t1", 8, 1, mapping, 3, ::openmldb::type::TTLType::kLatestTime,
         ::openmldb::common::StorageMode::kHDD, FLAGS_hdd_root_path);
     ASSERT_TRUE(table->Init());
-    const auto& ttl = table->GetTTL();
-    ASSERT_EQ((int64_t)ttl.abs_ttl, 0);
-    ASSERT_EQ((int64_t)ttl.lat_ttl, 3);
-    ASSERT_EQ(ttl.ttl_type, ::openmldb::storage::TTLType::kLatestTime);
     for (int idx = 0; idx < 100; idx++) {
         std::string key = "test" + std::to_string(idx);
         uint64_t ts = 9537;
@@ -738,326 +731,326 @@ TEST_F(DiskTableTest, CompactFilter) {
     RemoveData(path);
 }
 
-TEST_F(DiskTableTest, CompactFilterMulTs) {
-    ::openmldb::api::TableMeta table_meta;
-    table_meta.set_tid(11);
-    table_meta.set_pid(1);
-    table_meta.set_ttl(10);
-    table_meta.set_storage_mode(::openmldb::common::kHDD);
-    ::openmldb::common::ColumnDesc* column_desc = table_meta.add_column_desc();
-    column_desc->set_name("card");
-    column_desc->set_type("string");
-    ::openmldb::common::ColumnDesc* column_desc1 = table_meta.add_column_desc();
-    column_desc1->set_name("mcc");
-    column_desc1->set_type("string");
-    ::openmldb::common::ColumnDesc* column_desc2 = table_meta.add_column_desc();
-    column_desc2->set_name("ts1");
-    column_desc2->set_type("uint64");
-    column_desc2->set_is_ts_col(true);
-    column_desc2->set_ttl(3);
-    ::openmldb::common::ColumnDesc* column_desc3 = table_meta.add_column_desc();
-    column_desc3->set_name("ts2");
-    column_desc3->set_type("uint64");
-    column_desc3->set_is_ts_col(true);
-    column_desc3->set_ttl(5);
-    ::openmldb::common::ColumnKey* column_key = table_meta.add_column_key();
-    column_key->set_index_name("card");
-    column_key->add_ts_name("ts1");
-    column_key->add_ts_name("ts2");
-    ::openmldb::common::ColumnKey* column_key1 = table_meta.add_column_key();
-    column_key1->set_index_name("mcc");
-    column_key1->add_ts_name("ts2");
+// TEST_F(DiskTableTest, CompactFilterMulTs) {
+//     ::openmldb::api::TableMeta table_meta;
+//     table_meta.set_tid(11);
+//     table_meta.set_pid(1);
+//     table_meta.set_ttl(10);
+//     table_meta.set_storage_mode(::openmldb::common::kHDD);
+//     ::openmldb::common::ColumnDesc* column_desc = table_meta.add_column_desc();
+//     column_desc->set_name("card");
+//     column_desc->set_type("string");
+//     ::openmldb::common::ColumnDesc* column_desc1 = table_meta.add_column_desc();
+//     column_desc1->set_name("mcc");
+//     column_desc1->set_type("string");
+//     ::openmldb::common::ColumnDesc* column_desc2 = table_meta.add_column_desc();
+//     column_desc2->set_name("ts1");
+//     column_desc2->set_type("uint64");
+//     column_desc2->set_is_ts_col(true);
+//     column_desc2->set_ttl(3);
+//     ::openmldb::common::ColumnDesc* column_desc3 = table_meta.add_column_desc();
+//     column_desc3->set_name("ts2");
+//     column_desc3->set_type("uint64");
+//     column_desc3->set_is_ts_col(true);
+//     column_desc3->set_ttl(5);
+//     ::openmldb::common::ColumnKey* column_key = table_meta.add_column_key();
+//     column_key->set_index_name("card");
+//     column_key->add_ts_name("ts1");
+//     column_key->add_ts_name("ts2");
+//     ::openmldb::common::ColumnKey* column_key1 = table_meta.add_column_key();
+//     column_key1->set_index_name("mcc");
+//     column_key1->add_ts_name("ts2");
 
-    DiskTable* table = new DiskTable(table_meta, FLAGS_hdd_root_path);
-    ASSERT_TRUE(table->Init());
-    uint64_t cur_time = ::baidu::common::timer::get_micros() / 1000;
-    for (int idx = 0; idx < 100; idx++) {
-        Dimensions dims;
-        ::openmldb::api::Dimension* dim = dims.Add();
-        dim->set_key("card" + std::to_string(idx));
-        dim->set_idx(0);
-        ::openmldb::api::Dimension* dim1 = dims.Add();
-        dim1->set_key("mcc" + std::to_string(idx));
-        dim1->set_idx(1);
-        std::string key = "test" + std::to_string(idx);
-        if (idx == 5 || idx == 10) {
-            for (int i = 0; i < 10; i++) {
-                TSDimensions ts_dims;
-                ::openmldb::api::TSDimension* ts_dim = ts_dims.Add();
-                ts_dim->set_ts(cur_time - i * 60 * 1000);
-                ts_dim->set_idx(0);
-                ::openmldb::api::TSDimension* ts_dim1 = ts_dims.Add();
-                ts_dim1->set_ts(cur_time - i * 60 * 1000);
-                ts_dim1->set_idx(1);
-                ASSERT_TRUE(
-                    table->Put(dims, ts_dims, "value" + std::to_string(i)));
-            }
+//     DiskTable* table = new DiskTable(table_meta, FLAGS_hdd_root_path);
+//     ASSERT_TRUE(table->Init());
+//     uint64_t cur_time = ::baidu::common::timer::get_micros() / 1000;
+//     for (int idx = 0; idx < 100; idx++) {
+//         Dimensions dims;
+//         ::openmldb::api::Dimension* dim = dims.Add();
+//         dim->set_key("card" + std::to_string(idx));
+//         dim->set_idx(0);
+//         ::openmldb::api::Dimension* dim1 = dims.Add();
+//         dim1->set_key("mcc" + std::to_string(idx));
+//         dim1->set_idx(1);
+//         std::string key = "test" + std::to_string(idx);
+//         if (idx == 5 || idx == 10) {
+//             for (int i = 0; i < 10; i++) {
+//                 TSDimensions ts_dims;
+//                 ::openmldb::api::TSDimension* ts_dim = ts_dims.Add();
+//                 ts_dim->set_ts(cur_time - i * 60 * 1000);
+//                 ts_dim->set_idx(0);
+//                 ::openmldb::api::TSDimension* ts_dim1 = ts_dims.Add();
+//                 ts_dim1->set_ts(cur_time - i * 60 * 1000);
+//                 ts_dim1->set_idx(1);
+//                 ASSERT_TRUE(
+//                     table->Put(dims, ts_dims, "value" + std::to_string(i)));
+//             }
 
-        } else {
-            for (int i = 0; i < 10; i++) {
-                TSDimensions ts_dims;
-                ::openmldb::api::TSDimension* ts_dim = ts_dims.Add();
-                ts_dim->set_ts(cur_time - i);
-                ts_dim->set_idx(0);
-                ::openmldb::api::TSDimension* ts_dim1 = ts_dims.Add();
-                ts_dim1->set_ts(cur_time - i);
-                ts_dim1->set_idx(1);
-                ASSERT_TRUE(
-                    table->Put(dims, ts_dims, "value" + std::to_string(i)));
-            }
-        }
-    }
-    Ticket ticket;
-    TableIterator* iter = table->NewIterator(0, 0, "card0", ticket);
-    iter->SeekToFirst();
-    while (iter->Valid()) {
-        // printf("key %s ts %lu\n", iter->GetPK().c_str(), iter->GetKey());
-        iter->Next();
-    }
-    delete iter;
-    iter = table->NewIterator(1, 1, "mcc0", ticket);
-    iter->SeekToFirst();
-    while (iter->Valid()) {
-        // printf("key %s ts %lu\n", iter->GetPK().c_str(), iter->GetKey());
-        iter->Next();
-    }
-    delete iter;
-    for (int idx = 0; idx < 100; idx++) {
-        std::string key = "card" + std::to_string(idx);
-        std::string key1 = "mcc" + std::to_string(idx);
-        uint64_t ts = cur_time;
-        if (idx == 5 || idx == 10) {
-            for (int i = 0; i < 10; i++) {
-                std::string e_value = "value" + std::to_string(i);
-                std::string value;
-                ASSERT_TRUE(table->Get(0, key, ts - i * 60 * 1000, 0, value));
-                ASSERT_EQ(e_value, value);
-                ASSERT_TRUE(table->Get(0, key, ts - i * 60 * 1000, 1, value));
-                ASSERT_EQ(e_value, value);
-                ASSERT_TRUE(table->Get(1, key1, ts - i * 60 * 1000, 1, value));
-            }
+//         } else {
+//             for (int i = 0; i < 10; i++) {
+//                 TSDimensions ts_dims;
+//                 ::openmldb::api::TSDimension* ts_dim = ts_dims.Add();
+//                 ts_dim->set_ts(cur_time - i);
+//                 ts_dim->set_idx(0);
+//                 ::openmldb::api::TSDimension* ts_dim1 = ts_dims.Add();
+//                 ts_dim1->set_ts(cur_time - i);
+//                 ts_dim1->set_idx(1);
+//                 ASSERT_TRUE(
+//                     table->Put(dims, ts_dims, "value" + std::to_string(i)));
+//             }
+//         }
+//     }
+//     Ticket ticket;
+//     TableIterator* iter = table->NewIterator(0, 0, "card0", ticket);
+//     iter->SeekToFirst();
+//     while (iter->Valid()) {
+//         // printf("key %s ts %lu\n", iter->GetPK().c_str(), iter->GetKey());
+//         iter->Next();
+//     }
+//     delete iter;
+//     iter = table->NewIterator(1, 1, "mcc0", ticket);
+//     iter->SeekToFirst();
+//     while (iter->Valid()) {
+//         // printf("key %s ts %lu\n", iter->GetPK().c_str(), iter->GetKey());
+//         iter->Next();
+//     }
+//     delete iter;
+//     for (int idx = 0; idx < 100; idx++) {
+//         std::string key = "card" + std::to_string(idx);
+//         std::string key1 = "mcc" + std::to_string(idx);
+//         uint64_t ts = cur_time;
+//         if (idx == 5 || idx == 10) {
+//             for (int i = 0; i < 10; i++) {
+//                 std::string e_value = "value" + std::to_string(i);
+//                 std::string value;
+//                 ASSERT_TRUE(table->Get(0, key, ts - i * 60 * 1000, 0, value));
+//                 ASSERT_EQ(e_value, value);
+//                 ASSERT_TRUE(table->Get(0, key, ts - i * 60 * 1000, 1, value));
+//                 ASSERT_EQ(e_value, value);
+//                 ASSERT_TRUE(table->Get(1, key1, ts - i * 60 * 1000, 1, value));
+//             }
 
-        } else {
-            for (int i = 0; i < 10; i++) {
-                std::string e_value = "value" + std::to_string(i);
-                std::string value;
-                // printf("idx:%d i:%d key:%s ts:%lu\n", idx, i, key.c_str(), ts
-                // - i); printf("idx:%d i:%d key:%s ts:%lu\n", idx, i,
-                // key1.c_str(), ts - i);
-                ASSERT_TRUE(table->Get(0, key, ts - i, 0, value));
-                ASSERT_EQ(e_value, value);
-                ASSERT_TRUE(table->Get(0, key, ts - i, 1, value));
-                ASSERT_EQ(e_value, value);
-                ASSERT_TRUE(table->Get(1, key1, ts - i, 1, value));
-            }
-        }
-    }
-    table->CompactDB();
-    iter = table->NewIterator(0, 0, "card0", ticket);
-    iter->SeekToFirst();
-    while (iter->Valid()) {
-        // printf("key %s ts %lu\n", iter->GetPK().c_str(), iter->GetKey());
-        iter->Next();
-    }
-    delete iter;
-    iter = table->NewIterator(1, 1, "mcc0", ticket);
-    iter->SeekToFirst();
-    while (iter->Valid()) {
-        // printf("key %s ts %lu\n", iter->GetPK().c_str(), iter->GetKey());
-        iter->Next();
-    }
-    delete iter;
-    for (int idx = 0; idx < 100; idx++) {
-        std::string key = "card" + std::to_string(idx);
-        std::string key1 = "mcc" + std::to_string(idx);
-        uint64_t ts = cur_time;
-        if (idx == 5 || idx == 10) {
-            for (int i = 0; i < 10; i++) {
-                std::string e_value = "value" + std::to_string(i);
-                std::string value;
-                uint64_t cur_ts = ts - i * 60 * 1000;
-                if (i < 3) {
-                    ASSERT_TRUE(table->Get(0, key, cur_ts, 0, value));
-                    ASSERT_EQ(e_value, value);
-                } else {
-                    ASSERT_FALSE(table->Get(0, key, cur_ts, 0, value));
-                }
-                if (i < 5) {
-                    ASSERT_TRUE(table->Get(0, key, cur_ts, 1, value));
-                    ASSERT_EQ(e_value, value);
-                    ASSERT_TRUE(table->Get(1, key1, cur_ts, 1, value));
-                } else {
-                    // printf("idx:%lu i:%d key:%s ts:%lu\n", idx, i,
-                    // key.c_str(), cur_ts);
-                    ASSERT_FALSE(table->Get(0, key, cur_ts, 1, value));
-                    // printf("idx:%lu i:%d key:%s ts:%lu\n", idx, i,
-                    // key1.c_str(), cur_ts);
-                    ASSERT_FALSE(table->Get(1, key1, cur_ts, 1, value));
-                }
-            }
-        } else {
-            for (int i = 0; i < 10; i++) {
-                std::string e_value = "value" + std::to_string(i);
-                std::string value;
-                ASSERT_TRUE(table->Get(0, key, ts - i, 0, value));
-                ASSERT_EQ(e_value, value);
-                ASSERT_TRUE(table->Get(0, key, ts - i, 1, value));
-                ASSERT_EQ(e_value, value);
-                ASSERT_TRUE(table->Get(1, key1, ts - i, 1, value));
-            }
-        }
-    }
-    delete table;
-    std::string path = FLAGS_hdd_root_path + "/11_1";
-    RemoveData(path);
-}
+//         } else {
+//             for (int i = 0; i < 10; i++) {
+//                 std::string e_value = "value" + std::to_string(i);
+//                 std::string value;
+//                 // printf("idx:%d i:%d key:%s ts:%lu\n", idx, i, key.c_str(), ts
+//                 // - i); printf("idx:%d i:%d key:%s ts:%lu\n", idx, i,
+//                 // key1.c_str(), ts - i);
+//                 ASSERT_TRUE(table->Get(0, key, ts - i, 0, value));
+//                 ASSERT_EQ(e_value, value);
+//                 ASSERT_TRUE(table->Get(0, key, ts - i, 1, value));
+//                 ASSERT_EQ(e_value, value);
+//                 ASSERT_TRUE(table->Get(1, key1, ts - i, 1, value));
+//             }
+//         }
+//     }
+//     table->CompactDB();
+//     iter = table->NewIterator(0, 0, "card0", ticket);
+//     iter->SeekToFirst();
+//     while (iter->Valid()) {
+//         // printf("key %s ts %lu\n", iter->GetPK().c_str(), iter->GetKey());
+//         iter->Next();
+//     }
+//     delete iter;
+//     iter = table->NewIterator(1, 1, "mcc0", ticket);
+//     iter->SeekToFirst();
+//     while (iter->Valid()) {
+//         // printf("key %s ts %lu\n", iter->GetPK().c_str(), iter->GetKey());
+//         iter->Next();
+//     }
+//     delete iter;
+//     for (int idx = 0; idx < 100; idx++) {
+//         std::string key = "card" + std::to_string(idx);
+//         std::string key1 = "mcc" + std::to_string(idx);
+//         uint64_t ts = cur_time;
+//         if (idx == 5 || idx == 10) {
+//             for (int i = 0; i < 10; i++) {
+//                 std::string e_value = "value" + std::to_string(i);
+//                 std::string value;
+//                 uint64_t cur_ts = ts - i * 60 * 1000;
+//                 if (i < 3) {
+//                     ASSERT_TRUE(table->Get(0, key, cur_ts, 0, value));
+//                     ASSERT_EQ(e_value, value);
+//                 } else {
+//                     ASSERT_FALSE(table->Get(0, key, cur_ts, 0, value));
+//                 }
+//                 if (i < 5) {
+//                     ASSERT_TRUE(table->Get(0, key, cur_ts, 1, value));
+//                     ASSERT_EQ(e_value, value);
+//                     ASSERT_TRUE(table->Get(1, key1, cur_ts, 1, value));
+//                 } else {
+//                     // printf("idx:%lu i:%d key:%s ts:%lu\n", idx, i,
+//                     // key.c_str(), cur_ts);
+//                     ASSERT_FALSE(table->Get(0, key, cur_ts, 1, value));
+//                     // printf("idx:%lu i:%d key:%s ts:%lu\n", idx, i,
+//                     // key1.c_str(), cur_ts);
+//                     ASSERT_FALSE(table->Get(1, key1, cur_ts, 1, value));
+//                 }
+//             }
+//         } else {
+//             for (int i = 0; i < 10; i++) {
+//                 std::string e_value = "value" + std::to_string(i);
+//                 std::string value;
+//                 ASSERT_TRUE(table->Get(0, key, ts - i, 0, value));
+//                 ASSERT_EQ(e_value, value);
+//                 ASSERT_TRUE(table->Get(0, key, ts - i, 1, value));
+//                 ASSERT_EQ(e_value, value);
+//                 ASSERT_TRUE(table->Get(1, key1, ts - i, 1, value));
+//             }
+//         }
+//     }
+//     delete table;
+//     std::string path = FLAGS_hdd_root_path + "/11_1";
+//     RemoveData(path);
+// }
 
-TEST_F(DiskTableTest, GcHeadMulTs) {
-    ::openmldb::api::TableMeta table_meta;
-    table_meta.set_tid(12);
-    table_meta.set_pid(1);
-    table_meta.set_ttl(10);
-    table_meta.set_ttl_type(::openmldb::type::TTLType::kLatestTime);
-    table_meta.set_storage_mode(::openmldb::common::kHDD);
-    ::openmldb::common::ColumnDesc* column_desc = table_meta.add_column_desc();
-    column_desc->set_name("card");
-    column_desc->set_type("string");
-    ::openmldb::common::ColumnDesc* column_desc1 = table_meta.add_column_desc();
-    column_desc1->set_name("mcc");
-    column_desc1->set_type("string");
-    ::openmldb::common::ColumnDesc* column_desc2 = table_meta.add_column_desc();
-    column_desc2->set_name("ts1");
-    column_desc2->set_type("uint64");
-    column_desc2->set_is_ts_col(true);
-    column_desc2->set_ttl(3);
-    ::openmldb::common::ColumnDesc* column_desc3 = table_meta.add_column_desc();
-    column_desc3->set_name("ts2");
-    column_desc3->set_type("uint64");
-    column_desc3->set_is_ts_col(true);
-    column_desc3->set_ttl(5);
-    ::openmldb::common::ColumnKey* column_key = table_meta.add_column_key();
-    column_key->set_index_name("card");
-    column_key->add_ts_name("ts1");
-    column_key->add_ts_name("ts2");
-    ::openmldb::common::ColumnKey* column_key1 = table_meta.add_column_key();
-    column_key1->set_index_name("mcc");
-    column_key1->add_ts_name("ts2");
+// TEST_F(DiskTableTest, GcHeadMulTs) {
+//     ::openmldb::api::TableMeta table_meta;
+//     table_meta.set_tid(12);
+//     table_meta.set_pid(1);
+//     table_meta.set_ttl(10);
+//     table_meta.set_ttl_type(::openmldb::type::TTLType::kLatestTime);
+//     table_meta.set_storage_mode(::openmldb::common::kHDD);
+//     ::openmldb::common::ColumnDesc* column_desc = table_meta.add_column_desc();
+//     column_desc->set_name("card");
+//     column_desc->set_type("string");
+//     ::openmldb::common::ColumnDesc* column_desc1 = table_meta.add_column_desc();
+//     column_desc1->set_name("mcc");
+//     column_desc1->set_type("string");
+//     ::openmldb::common::ColumnDesc* column_desc2 = table_meta.add_column_desc();
+//     column_desc2->set_name("ts1");
+//     column_desc2->set_type("uint64");
+//     column_desc2->set_is_ts_col(true);
+//     column_desc2->set_ttl(3);
+//     ::openmldb::common::ColumnDesc* column_desc3 = table_meta.add_column_desc();
+//     column_desc3->set_name("ts2");
+//     column_desc3->set_type("uint64");
+//     column_desc3->set_is_ts_col(true);
+//     column_desc3->set_ttl(5);
+//     ::openmldb::common::ColumnKey* column_key = table_meta.add_column_key();
+//     column_key->set_index_name("card");
+//     column_key->add_ts_name("ts1");
+//     column_key->add_ts_name("ts2");
+//     ::openmldb::common::ColumnKey* column_key1 = table_meta.add_column_key();
+//     column_key1->set_index_name("mcc");
+//     column_key1->add_ts_name("ts2");
 
-    DiskTable* table = new DiskTable(table_meta, FLAGS_hdd_root_path);
-    ASSERT_TRUE(table->Init());
-    uint64_t cur_time = ::baidu::common::timer::get_micros() / 1000;
-    for (int idx = 0; idx < 100; idx++) {
-        Dimensions dims;
-        ::openmldb::api::Dimension* dim = dims.Add();
-        dim->set_key("card" + std::to_string(idx));
-        dim->set_idx(0);
-        ::openmldb::api::Dimension* dim1 = dims.Add();
-        dim1->set_key("mcc" + std::to_string(idx));
-        dim1->set_idx(1);
-        std::string key = "test" + std::to_string(idx);
-        for (int i = 0; i < 10; i++) {
-            if (idx == 50 && i > 2) {
-                break;
-            }
-            TSDimensions ts_dims;
-            ::openmldb::api::TSDimension* ts_dim = ts_dims.Add();
-            ts_dim->set_ts(cur_time - i);
-            ts_dim->set_idx(0);
-            ::openmldb::api::TSDimension* ts_dim1 = ts_dims.Add();
-            ts_dim1->set_ts(cur_time - i);
-            ts_dim1->set_idx(1);
-            ASSERT_TRUE(table->Put(dims, ts_dims, "value" + std::to_string(i)));
-        }
-    }
-    Ticket ticket;
-    TableIterator* iter = table->NewIterator(0, 0, "card0", ticket);
-    iter->SeekToFirst();
-    while (iter->Valid()) {
-        // printf("key %s ts %lu\n", iter->GetPK().c_str(), iter->GetKey());
-        iter->Next();
-    }
-    delete iter;
-    iter = table->NewIterator(1, 1, "mcc0", ticket);
-    iter->SeekToFirst();
-    while (iter->Valid()) {
-        // printf("key %s ts %lu\n", iter->GetPK().c_str(), iter->GetKey());
-        iter->Next();
-    }
-    delete iter;
-    for (int idx = 0; idx < 100; idx++) {
-        std::string key = "card" + std::to_string(idx);
-        std::string key1 = "mcc" + std::to_string(idx);
-        uint64_t ts = cur_time;
-        for (int i = 0; i < 10; i++) {
-            std::string e_value = "value" + std::to_string(i);
-            std::string value;
-            // printf("idx:%d i:%d key:%s ts:%lu\n", idx, i, key.c_str(), ts -
-            // i); printf("idx:%d i:%d key:%s ts:%lu\n", idx, i, key1.c_str(),
-            // ts
-            // - i);
-            if (idx == 50 && i > 2) {
-                ASSERT_FALSE(table->Get(0, key, ts - i, 0, value));
-                ASSERT_FALSE(table->Get(0, key, ts - i, 1, value));
-                ASSERT_FALSE(table->Get(1, key1, ts - i, 1, value));
-            } else {
-                ASSERT_TRUE(table->Get(0, key, ts - i, 0, value));
-                ASSERT_EQ(e_value, value);
-                ASSERT_TRUE(table->Get(0, key, ts - i, 1, value));
-                ASSERT_EQ(e_value, value);
-                ASSERT_TRUE(table->Get(1, key1, ts - i, 1, value));
-            }
-        }
-    }
-    table->SchedGc();
-    iter = table->NewIterator(0, 0, "card0", ticket);
-    iter->SeekToFirst();
-    while (iter->Valid()) {
-        // printf("key %s ts %lu\n", iter->GetPK().c_str(), iter->GetKey());
-        iter->Next();
-    }
-    delete iter;
-    iter = table->NewIterator(1, 1, "mcc0", ticket);
-    iter->SeekToFirst();
-    while (iter->Valid()) {
-        // printf("key %s ts %lu\n", iter->GetPK().c_str(), iter->GetKey());
-        iter->Next();
-    }
-    delete iter;
-    for (int idx = 0; idx < 100; idx++) {
-        std::string key = "card" + std::to_string(idx);
-        std::string key1 = "mcc" + std::to_string(idx);
-        uint64_t ts = cur_time;
-        for (int i = 0; i < 10; i++) {
-            std::string e_value = "value" + std::to_string(i);
-            std::string value;
-            // printf("idx:%d, i:%d, key:%s, ts:%lu\n", idx, i , key.c_str(),
-            // ts-i);
-            if (idx == 50 && i > 2) {
-                ASSERT_FALSE(table->Get(0, key, ts - i, 0, value));
-                ASSERT_FALSE(table->Get(0, key, ts - i, 1, value));
-                ASSERT_FALSE(table->Get(1, key1, ts - i, 1, value));
-            } else if (i < 3) {
-                ASSERT_TRUE(table->Get(0, key, ts - i, 0, value));
-                ASSERT_EQ(e_value, value);
-                ASSERT_TRUE(table->Get(0, key, ts - i, 1, value));
-                ASSERT_EQ(e_value, value);
-                ASSERT_TRUE(table->Get(1, key1, ts - i, 1, value));
-            } else if (i < 5) {
-                ASSERT_FALSE(table->Get(0, key, ts - i, 0, value));
-                ASSERT_TRUE(table->Get(0, key, ts - i, 1, value));
-                ASSERT_EQ(e_value, value);
-                ASSERT_TRUE(table->Get(1, key1, ts - i, 1, value));
-            } else {
-                ASSERT_FALSE(table->Get(0, key, ts - i, 0, value));
-                ASSERT_FALSE(table->Get(0, key, ts - i, 1, value));
-                ASSERT_FALSE(table->Get(1, key1, ts - i, 1, value));
-            }
-        }
-    }
-    delete table;
-    std::string path = FLAGS_hdd_root_path + "/12_1";
-    RemoveData(path);
-}
+//     DiskTable* table = new DiskTable(table_meta, FLAGS_hdd_root_path);
+//     ASSERT_TRUE(table->Init());
+//     uint64_t cur_time = ::baidu::common::timer::get_micros() / 1000;
+//     for (int idx = 0; idx < 100; idx++) {
+//         Dimensions dims;
+//         ::openmldb::api::Dimension* dim = dims.Add();
+//         dim->set_key("card" + std::to_string(idx));
+//         dim->set_idx(0);
+//         ::openmldb::api::Dimension* dim1 = dims.Add();
+//         dim1->set_key("mcc" + std::to_string(idx));
+//         dim1->set_idx(1);
+//         std::string key = "test" + std::to_string(idx);
+//         for (int i = 0; i < 10; i++) {
+//             if (idx == 50 && i > 2) {
+//                 break;
+//             }
+//             TSDimensions ts_dims;
+//             ::openmldb::api::TSDimension* ts_dim = ts_dims.Add();
+//             ts_dim->set_ts(cur_time - i);
+//             ts_dim->set_idx(0);
+//             ::openmldb::api::TSDimension* ts_dim1 = ts_dims.Add();
+//             ts_dim1->set_ts(cur_time - i);
+//             ts_dim1->set_idx(1);
+//             ASSERT_TRUE(table->Put(dims, ts_dims, "value" + std::to_string(i)));
+//         }
+//     }
+//     Ticket ticket;
+//     TableIterator* iter = table->NewIterator(0, 0, "card0", ticket);
+//     iter->SeekToFirst();
+//     while (iter->Valid()) {
+//         // printf("key %s ts %lu\n", iter->GetPK().c_str(), iter->GetKey());
+//         iter->Next();
+//     }
+//     delete iter;
+//     iter = table->NewIterator(1, 1, "mcc0", ticket);
+//     iter->SeekToFirst();
+//     while (iter->Valid()) {
+//         // printf("key %s ts %lu\n", iter->GetPK().c_str(), iter->GetKey());
+//         iter->Next();
+//     }
+//     delete iter;
+//     for (int idx = 0; idx < 100; idx++) {
+//         std::string key = "card" + std::to_string(idx);
+//         std::string key1 = "mcc" + std::to_string(idx);
+//         uint64_t ts = cur_time;
+//         for (int i = 0; i < 10; i++) {
+//             std::string e_value = "value" + std::to_string(i);
+//             std::string value;
+//             // printf("idx:%d i:%d key:%s ts:%lu\n", idx, i, key.c_str(), ts -
+//             // i); printf("idx:%d i:%d key:%s ts:%lu\n", idx, i, key1.c_str(),
+//             // ts
+//             // - i);
+//             if (idx == 50 && i > 2) {
+//                 ASSERT_FALSE(table->Get(0, key, ts - i, 0, value));
+//                 ASSERT_FALSE(table->Get(0, key, ts - i, 1, value));
+//                 ASSERT_FALSE(table->Get(1, key1, ts - i, 1, value));
+//             } else {
+//                 ASSERT_TRUE(table->Get(0, key, ts - i, 0, value));
+//                 ASSERT_EQ(e_value, value);
+//                 ASSERT_TRUE(table->Get(0, key, ts - i, 1, value));
+//                 ASSERT_EQ(e_value, value);
+//                 ASSERT_TRUE(table->Get(1, key1, ts - i, 1, value));
+//             }
+//         }
+//     }
+//     table->SchedGc();
+//     iter = table->NewIterator(0, 0, "card0", ticket);
+//     iter->SeekToFirst();
+//     while (iter->Valid()) {
+//         // printf("key %s ts %lu\n", iter->GetPK().c_str(), iter->GetKey());
+//         iter->Next();
+//     }
+//     delete iter;
+//     iter = table->NewIterator(1, 1, "mcc0", ticket);
+//     iter->SeekToFirst();
+//     while (iter->Valid()) {
+//         // printf("key %s ts %lu\n", iter->GetPK().c_str(), iter->GetKey());
+//         iter->Next();
+//     }
+//     delete iter;
+//     for (int idx = 0; idx < 100; idx++) {
+//         std::string key = "card" + std::to_string(idx);
+//         std::string key1 = "mcc" + std::to_string(idx);
+//         uint64_t ts = cur_time;
+//         for (int i = 0; i < 10; i++) {
+//             std::string e_value = "value" + std::to_string(i);
+//             std::string value;
+//             // printf("idx:%d, i:%d, key:%s, ts:%lu\n", idx, i , key.c_str(),
+//             // ts-i);
+//             if (idx == 50 && i > 2) {
+//                 ASSERT_FALSE(table->Get(0, key, ts - i, 0, value));
+//                 ASSERT_FALSE(table->Get(0, key, ts - i, 1, value));
+//                 ASSERT_FALSE(table->Get(1, key1, ts - i, 1, value));
+//             } else if (i < 3) {
+//                 ASSERT_TRUE(table->Get(0, key, ts - i, 0, value));
+//                 ASSERT_EQ(e_value, value);
+//                 ASSERT_TRUE(table->Get(0, key, ts - i, 1, value));
+//                 ASSERT_EQ(e_value, value);
+//                 ASSERT_TRUE(table->Get(1, key1, ts - i, 1, value));
+//             } else if (i < 5) {
+//                 ASSERT_FALSE(table->Get(0, key, ts - i, 0, value));
+//                 ASSERT_TRUE(table->Get(0, key, ts - i, 1, value));
+//                 ASSERT_EQ(e_value, value);
+//                 ASSERT_TRUE(table->Get(1, key1, ts - i, 1, value));
+//             } else {
+//                 ASSERT_FALSE(table->Get(0, key, ts - i, 0, value));
+//                 ASSERT_FALSE(table->Get(0, key, ts - i, 1, value));
+//                 ASSERT_FALSE(table->Get(1, key1, ts - i, 1, value));
+//             }
+//         }
+//     }
+//     delete table;
+//     std::string path = FLAGS_hdd_root_path + "/12_1";
+//     RemoveData(path);
+// }
 
 TEST_F(DiskTableTest, GcHead) {
     std::map<std::string, uint32_t> mapping;
