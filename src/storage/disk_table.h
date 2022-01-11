@@ -28,7 +28,7 @@
 #include "proto/tablet.pb.h"
 #include "storage/iterator.h"
 #include "storage/table.h"
-#include "timer.h"  // NOLINT
+#include "common/timer.h"  // NOLINT
 
 typedef google::protobuf::RepeatedPtrField<::rtidb::api::Dimension> Dimensions;
 
