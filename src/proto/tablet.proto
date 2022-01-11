@@ -30,14 +30,7 @@ enum TableMode {
     kTableFollower = 2;
 }
 
-enum TTLType {
-    kAbsoluteTime = 1;
-    kRelativeTime = 2;
-    // keep the latest record
-    kLatestTime = 3;
-    kAbsAndLat = 4;
-    kAbsOrLat = 5;
-}
+
 
 enum TableState {
     kTableUndefined = 0;
@@ -320,7 +313,7 @@ message TableMeta {
     repeated common.VersionPair schema_versions = 15;
     repeated common.TablePartition table_partition = 16;
     optional openmldb.common.StorageMode storage_mode = 17 [default = kMemory];
-    optional TTLType ttl_type = 18 [default = kAbsoluteTime, deprecated = true];
+    optional openmldb.type.TTLType ttl_type = 18 [default = kAbsoluteTime, deprecated = true];
 
 
 }
