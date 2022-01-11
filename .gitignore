@@ -1476,3 +1476,12 @@ steps/rocksdb-5.18.3/utilities/write_batch_with_index/write_batch_with_index_tes
 steps/rocksdb-5.18.3/utilities/write_batch_with_index/write_batch_with_index.cc
 steps/rocksdb-5.18.3.tar.gz
 log.txt
+src/CMakeFiles/cmake.check_cache
+src/CMakeFiles/3.22.1/CMakeCCompiler.cmake
+src/CMakeFiles/3.22.1/CMakeCXXCompiler.cmake
+src/CMakeFiles/3.22.1/CMakeDetermineCompilerABI_C.bin
+src/CMakeFiles/3.22.1/CMakeDetermineCompilerABI_CXX.bin
+src/CMakeFiles/3.22.1/CMakeSystem.cmake
+src/CMakeFiles/3.22.1/CompilerIdC/CMakeCCompilerId.c
+src/CMakeFiles/3.22.1/CompilerIdCXX/CMakeCXXCompilerId.cpp
+src/CMakeCache.txt
