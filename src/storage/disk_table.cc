@@ -56,7 +56,6 @@ DiskTable::DiskTable(const ::openmldb::api::TableMeta& table_meta,
       write_opts_(),
       offset_(0),
       db_root_path_(db_root_path) {
-    table_meta_.CopyFrom(table_meta);
     if (!options_template_initialized) {
         initOptionTemplate();
     }
@@ -64,6 +63,8 @@ DiskTable::DiskTable(const ::openmldb::api::TableMeta& table_meta,
     write_opts_.disableWAL = FLAGS_disable_wal;
     db_ = nullptr;
     ttl_type_ = TTLSt::ConvertTTLType(table_meta.ttl_type());
+    table_meta_ = std::make_shared<::openmldb::api::TableMeta>(table_meta);
+
 }
 
 DiskTable::~DiskTable() {
