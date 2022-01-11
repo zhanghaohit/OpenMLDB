@@ -31,11 +31,11 @@ static bool options_template_initialized = false;
 
 DiskTable::DiskTable(const std::string& name, uint32_t id, uint32_t pid,
                      const std::map<std::string, uint32_t>& mapping,
-                     uint64_t ttl, ::openmldb::api::TTLType ttl_type,
+                     uint64_t ttl, ::openmldb::type::TTLType ttl_type,
                      ::openmldb::common::StorageMode storage_mode,
                      const std::string& db_root_path)
     : Table(storage_mode, name, id, pid, ttl * 60 * 1000, true, 0, mapping,
-            ttl_type, ::openmldb::api::CompressType::kNoCompress),
+            ttl_type, ::openmldb::type::CompressType::kNoCompress),
       write_opts_(),
       offset_(0),
       db_root_path_(db_root_path) {
@@ -51,8 +51,8 @@ DiskTable::DiskTable(const ::openmldb::api::TableMeta& table_meta,
                      const std::string& db_root_path)
     : Table(table_meta.storage_mode(), table_meta.name(), table_meta.tid(),
             table_meta.pid(), 0, true, 0, std::map<std::string, uint32_t>(),
-            ::openmldb::api::TTLType::kAbsoluteTime,
-            ::openmldb::api::CompressType::kNoCompress),
+            ::openmldb::type::TTLType::kAbsoluteTime,
+            ::openmldb::type::CompressType::kNoCompress),
       write_opts_(),
       offset_(0),
       db_root_path_(db_root_path) {
@@ -257,71 +257,71 @@ bool DiskTable::Put(uint64_t time, const std::string& value,
     }
 }
 
-bool DiskTable::Put(const Dimensions& dimensions,
-                    const TSDimensions& ts_dimemsions,
-                    const std::string& value) {
-    if (dimensions.size() == 0 || ts_dimemsions.size() == 0) {
-        PDLOG(WARNING, "empty dimesion. tid %u pid %u", id_, pid_);
-        return false;
-    }
-    std::map<int32_t, std::string> inner_index_key_map;
-    for (auto iter = dimensions.begin(); iter != dimensions.end(); iter++) {
-        int32_t inner_pos = table_index_.GetInnerIndexPos(iter->idx());
-        if (inner_pos < 0) {
-            PDLOG(WARNING, "invalid dimesion. dimesion idx %u, tid %u pid %u", iter->idx(), id_, pid_);
-            return false;
-        }
-        inner_index_key_map.emplace(inner_pos, iter->key());
-    }
+// bool DiskTable::Put(const Dimensions& dimensions,
+//                     const TSDimensions& ts_dimemsions,
+//                     const std::string& value) {
+//     if (dimensions.size() == 0 || ts_dimemsions.size() == 0) {
+//         PDLOG(WARNING, "empty dimesion. tid %u pid %u", id_, pid_);
+//         return false;
+//     }
+//     std::map<int32_t, std::string> inner_index_key_map;
+//     for (auto iter = dimensions.begin(); iter != dimensions.end(); iter++) {
+//         int32_t inner_pos = table_index_.GetInnerIndexPos(iter->idx());
+//         if (inner_pos < 0) {
+//             PDLOG(WARNING, "invalid dimesion. dimesion idx %u, tid %u pid %u", iter->idx(), id_, pid_);
+//             return false;
+//         }
+//         inner_index_key_map.emplace(inner_pos, iter->key());
+//     }
 
-    rocksdb::WriteBatch batch;
+//     rocksdb::WriteBatch batch;
 
-    for (const auto& kv : inner_index_key_map) {
-        auto inner_index = table_index_.GetInnerIndex(kv.first);
-        if (!inner_index) {
-            PDLOG(WARNING, "invalid inner index pos %d. tid %u pid %u", kv.first, id_, pid_);
-            return false;
-        }
-        const auto& indexs = inner_index->GetIndex();
-        for (const auto& index_def : indexs) {
-            auto ts_col = index_def->GetTsColumn();
-            if (!ts_col) {
-                PDLOG(WARNING, "has not ts col. tid %u pid %u", id_, pid_);
-                return false;
-            }
-            uint64_t ts = 0;
-            bool has_found_ts = false;
-            for (auto it = ts_dimemsions.begin(); it != ts_dimemsions.end(); it++) {
-                if (static_cast<int>(it->idx()) == ts_col->GetTsIdx()) {
-                    has_found_ts = true;
-                    ts = it->ts();
-                    break;
-                }
-            }
-            if (!has_found_ts) {
-                DEBUGLOG("cannot find ts col %d. tid %u pid %u", ts_col->GetTsIdx(), id_, pid_);
-                continue;
-            }
-            if (index_def->IsReady()) {
-                std::string combine_key;
-                if (indexs.size() == 1) {
-                    combine_key = CombineKeyTs(kv.second, ts);
-                } else {
-                   combine_key = CombineKeyTs(kv.second, ts, (uint8_t)ts_col->GetTsIdx());
-                }
-                batch.Put(cf_hs_[inner_index->GetId() + 1], rocksdb::Slice(combine_key), value);
-            }
-        }
-    }
-    rocksdb::Status s = db_->Write(write_opts_, &batch);
-    if (s.ok()) {
-        offset_.fetch_add(1, std::memory_order_relaxed);
-    } else {
-        DEBUGLOG("Put failed. tid %u pid %u msg %s", id_, pid_,
-              s.ToString().c_str());
-    }
-    return s.ok();
-}
+//     for (const auto& kv : inner_index_key_map) {
+//         auto inner_index = table_index_.GetInnerIndex(kv.first);
+//         if (!inner_index) {
+//             PDLOG(WARNING, "invalid inner index pos %d. tid %u pid %u", kv.first, id_, pid_);
+//             return false;
+//         }
+//         const auto& indexs = inner_index->GetIndex();
+//         for (const auto& index_def : indexs) {
+//             auto ts_col = index_def->GetTsColumn();
+//             if (!ts_col) {
+//                 PDLOG(WARNING, "has not ts col. tid %u pid %u", id_, pid_);
+//                 return false;
+//             }
+//             uint64_t ts = 0;
+//             bool has_found_ts = false;
+//             for (auto it = ts_dimemsions.begin(); it != ts_dimemsions.end(); it++) {
+//                 if (static_cast<int>(it->idx()) == ts_col->GetTsIdx()) {
+//                     has_found_ts = true;
+//                     ts = it->ts();
+//                     break;
+//                 }
+//             }
+//             if (!has_found_ts) {
+//                 DEBUGLOG("cannot find ts col %d. tid %u pid %u", ts_col->GetTsIdx(), id_, pid_);
+//                 continue;
+//             }
+//             if (index_def->IsReady()) {
+//                 std::string combine_key;
+//                 if (indexs.size() == 1) {
+//                     combine_key = CombineKeyTs(kv.second, ts);
+//                 } else {
+//                    combine_key = CombineKeyTs(kv.second, ts, (uint8_t)ts_col->GetTsIdx());
+//                 }
+//                 batch.Put(cf_hs_[inner_index->GetId() + 1], rocksdb::Slice(combine_key), value);
+//             }
+//         }
+//     }
+//     rocksdb::Status s = db_->Write(write_opts_, &batch);
+//     if (s.ok()) {
+//         offset_.fetch_add(1, std::memory_order_relaxed);
+//     } else {
+//         DEBUGLOG("Put failed. tid %u pid %u msg %s", id_, pid_,
+//               s.ToString().c_str());
+//     }
+//     return s.ok();
+// }
 
 bool DiskTable::Delete(const std::string& pk, uint32_t idx) {
     rocksdb::WriteBatch batch;
