@@ -92,7 +92,7 @@ add_library(openmldb_proto STATIC proto/type.pb.cc proto/common.pb.cc proto/tabl
 
 add_library(openmldb_flags flags.cc)
 
-set(BIN_LIBS apiserver nameserver tablet openmldb_sdk openmldb_catalog client zk_client replica base storage openmldb_codec schema openmldb_proto log common zookeeper_mt tcmalloc_minimal
+set(BIN_LIBS apiserver nameserver tablet openmldb_sdk openmldb_catalog client zk_client replica base storage openmldb_codec schema openmldb_proto log common zookeeper_mt tcmalloc_minimal rocksdb
 ${VM_LIBS}
 ${LLVM_LIBS}
 ${ZETASQL_LIBS}

@@ -15,9 +15,9 @@
 
 
 
-DECLARE_string(ssd_root_path);
-DECLARE_string(hdd_root_path);
-DECLARE_uint32(max_traverse_cnt);
+std::string FLAGS_ssd_root_path;
+std::string FLAGS_hdd_root_path;
+int FLAGS_max_traverse_cnt;
 
 namespace openmldb {
 namespace storage {
