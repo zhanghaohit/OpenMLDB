@@ -1,5 +1,7 @@
+rm ../.deps/usr/lib/librocksdb.a
+rm -rf ../.deps/usr/include/rocksdb
 echo "start install rocksdb ..."
-# wget -e use_proxy=off -O rocksdb-5.18.3.tar.gz  https://github.com/facebook/rocksdb/archive/v5.18.3.tar.gz
+wget -e use_proxy=off -O rocksdb-5.18.3.tar.gz  https://github.com/facebook/rocksdb/archive/v5.18.3.tar.gz
 tar zxf rocksdb-5.18.3.tar.gz
 cd rocksdb-5.18.3
 # export CPPFLAGS=-I${DEPS_PREFIX}/include
