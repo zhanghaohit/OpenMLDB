@@ -349,8 +349,8 @@ class DiskTable : public Table {
     TableIterator* NewIterator(uint32_t idx, const std::string& pk,
                                Ticket& ticket) override;
 
-    TableIterator* NewIterator(uint32_t idx, int32_t ts_idx,
-                               const std::string& pk, Ticket& ticket);
+    // TableIterator* NewIterator(uint32_t idx, int32_t ts_idx,
+    //                            const std::string& pk, Ticket& ticket);
 
     TableIterator* NewTraverseIterator(uint32_t idx) override;
 

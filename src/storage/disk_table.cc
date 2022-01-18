@@ -362,17 +362,18 @@ bool DiskTable::Delete(const std::string& pk, uint32_t idx) {
 
 bool DiskTable::Get(uint32_t idx, const std::string& pk, uint64_t ts,
                     uint32_t ts_idx, std::string& value) {
-    Ticket ticket;
-    auto it = NewIterator(idx, ts_idx, pk, ticket);
-    it->Seek(ts);
-    if ((it->Valid()) && (it->GetKey() == ts)) {
-        value = it->GetValue().ToString();
-        delete it;
-        return true;
-    } else {
-        delete it;
-        return false;
-    }
+    return Get(idx, pk, ts, value);
+    // Ticket ticket;
+    // auto it = NewIterator(idx, ts_idx, pk, ticket);
+    // it->Seek(ts);
+    // if ((it->Valid()) && (it->GetKey() == ts)) {
+    //     value = it->GetValue().ToString();
+    //     delete it;
+    //     return true;
+    // } else {
+    //     delete it;
+    //     return false;
+    // }
 }
 
 bool DiskTable::Get(uint32_t idx, const std::string& pk, uint64_t ts,
@@ -616,13 +617,13 @@ TableIterator* DiskTable::NewIterator(uint32_t idx, const std::string& pk,
     }
     uint32_t inner_pos = index_def->GetInnerPos();
     auto inner_index = table_index_.GetInnerIndex(inner_pos);
-    if (inner_index && inner_index->GetIndex().size() > 1) {
-        auto ts_col = index_def->GetTsColumn();
-        if (!ts_col) {
-            return NULL;
-        }
-        return NewIterator(idx, ts_col->GetId(), pk, ticket);
-    }
+    // if (inner_index && inner_index->GetIndex().size() > 1) {
+    //     auto ts_col = index_def->GetTsColumn();
+    //     if (!ts_col) {
+    //         return NULL;
+    //     }
+    //     return NewIterator(idx, ts_col->GetId(), pk, ticket);
+    // }
     rocksdb::ReadOptions ro = rocksdb::ReadOptions();
     const rocksdb::Snapshot* snapshot = db_->GetSnapshot();
     ro.snapshot = snapshot;
@@ -632,27 +633,27 @@ TableIterator* DiskTable::NewIterator(uint32_t idx, const std::string& pk,
     return new DiskTableIterator(db_, it, snapshot, pk);
 }
 
-TableIterator* DiskTable::NewIterator(uint32_t idx, int32_t ts_idx,
-                                      const std::string& pk, Ticket& ticket) {
-    std::shared_ptr<IndexDef> index_def = table_index_.GetIndex(idx, ts_idx);
-    if (!index_def) {
-        PDLOG(WARNING, "index %u not found in table, tid %u pid %u", idx, id_,
-              pid_);
-        return NULL;
-    }
-    rocksdb::ReadOptions ro = rocksdb::ReadOptions();
-    const rocksdb::Snapshot* snapshot = db_->GetSnapshot();
-    ro.snapshot = snapshot;
-    ro.prefix_same_as_start = true;
-    ro.pin_data = true;
-    uint32_t inner_pos = index_def->GetInnerPos();
-    auto inner_index = table_index_.GetInnerIndex(inner_pos);
-    rocksdb::Iterator* it = db_->NewIterator(ro, cf_hs_[inner_pos + 1]);
-    if (inner_index && inner_index->GetIndex().size() > 1) {
-        return new DiskTableIterator(db_, it, snapshot, pk, ts_idx);
-    }
-    return new DiskTableIterator(db_, it, snapshot, pk);
-}
+// TableIterator* DiskTable::NewIterator(uint32_t idx, int32_t ts_idx,
+//                                       const std::string& pk, Ticket& ticket) {
+//     std::shared_ptr<IndexDef> index_def = table_index_.GetIndex(idx, ts_idx);
+//     if (!index_def) {
+//         PDLOG(WARNING, "index %u not found in table, tid %u pid %u", idx, id_,
+//               pid_);
+//         return NULL;
+//     }
+//     rocksdb::ReadOptions ro = rocksdb::ReadOptions();
+//     const rocksdb::Snapshot* snapshot = db_->GetSnapshot();
+//     ro.snapshot = snapshot;
+//     ro.prefix_same_as_start = true;
+//     ro.pin_data = true;
+//     uint32_t inner_pos = index_def->GetInnerPos();
+//     auto inner_index = table_index_.GetInnerIndex(inner_pos);
+//     rocksdb::Iterator* it = db_->NewIterator(ro, cf_hs_[inner_pos + 1]);
+//     if (inner_index && inner_index->GetIndex().size() > 1) {
+//         return new DiskTableIterator(db_, it, snapshot, pk, ts_idx);
+//     }
+//     return new DiskTableIterator(db_, it, snapshot, pk);
+// }
 
 TableIterator* DiskTable::NewTraverseIterator(uint32_t index) {
     std::shared_ptr<IndexDef> index_def = table_index_.GetIndex(index);
