@@ -313,11 +313,11 @@ class DiskTable : public Table {
     bool Put(uint64_t time, const std::string& value,
              const Dimensions& dimensions) override;
 
-    bool Put(const Dimensions& dimensions, const TSDimensions& ts_dimemsions,
-             const std::string& value);
+    // bool Put(const Dimensions& dimensions, const TSDimensions& ts_dimemsions,
+    //          const std::string& value);
 
-    bool Get(uint32_t idx, const std::string& pk, uint64_t ts, uint32_t ts_idx,
-             std::string& value);  // NOLINT
+    // bool Get(uint32_t idx, const std::string& pk, uint64_t ts, uint32_t ts_idx,
+    //          std::string& value);  // NOLINT
 
     bool Get(uint32_t idx, const std::string& pk, uint64_t ts,
              std::string& value);  // NOLINT
@@ -354,8 +354,7 @@ class DiskTable : public Table {
 
     TableIterator* NewTraverseIterator(uint32_t idx) override;
 
-    // TODO(litongxin) just remove override. may need to remove the function
-    TableIterator* NewTraverseIterator(uint32_t idx, uint32_t ts_idx);
+    // TableIterator* NewTraverseIterator(uint32_t idx, uint32_t ts_idx);
 
 
     ::hybridse::vm::WindowIterator* NewWindowIterator(uint32_t idx) {
