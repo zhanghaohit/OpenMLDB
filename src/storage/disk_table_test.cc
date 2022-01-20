@@ -2298,6 +2298,237 @@ TEST_F(DiskTableTest, AbsOrLatSetGetNew) {
     RemoveData(path);
 }
 
+// TEST_F(DiskTableTest, GcAbsOrLatNew) {
+
+//     int32_t offset = FLAGS_gc_safe_offset;
+//     FLAGS_gc_safe_offset = 0;
+
+//     ::openmldb::api::TableMeta table_meta;
+//     table_meta.set_tid(37);
+//     table_meta.set_pid(1);
+//     table_meta.set_storage_mode(::openmldb::common::kHDD);
+//     table_meta.set_mode(::openmldb::api::TableMode::kTableLeader);
+//     ::openmldb::common::ColumnDesc* column_desc = table_meta.add_column_desc();
+//     column_desc->set_name("idx0");
+//     column_desc->set_data_type(::openmldb::type::kString);
+//     ::openmldb::common::ColumnDesc* column_desc1 = table_meta.add_column_desc();
+//     column_desc1->set_name("value");
+//     column_desc1->set_data_type(::openmldb::type::kString);
+    
+//     ::openmldb::common::ColumnKey* column_key = table_meta.add_column_key();
+//     column_key->set_index_name("idx0");
+//     column_key->add_col_name("idx0");
+//     auto ttl = column_key->mutable_ttl();
+//     ttl->set_ttl_type(::openmldb::type::TTLType::kAbsOrLat);
+//     ttl->set_abs_ttl(4);
+//     ttl->set_lat_ttl(3);
+
+//     DiskTable* table = new DiskTable(table_meta, FLAGS_hdd_root_path);
+
+//     table->Init();
+
+    
+
+//     uint64_t now = ::baidu::common::timer::get_micros() / 1000;
+//     table->Put("test1", now - 3 * (60 * 1000) - 1000, "value1", 6);
+//     table->Put("test1", now - 3 * (60 * 1000) - 1000, "value1", 6);
+//     table->Put("test1", now - 2 * (60 * 1000) - 1000, "value2", 6);
+//     table->Put("test1", now - 1 * (60 * 1000) - 1000, "value3", 6);
+//     table->Put("test2", now - 4 * (60 * 1000) - 1000, "value4", 6);
+//     table->Put("test2", now - 2 * (60 * 1000) - 1000, "value5", 6);
+//     table->Put("test2", now - 1 * (60 * 1000) - 1000, "value6", 6);
+//     ASSERT_EQ(7, (int64_t)table->GetRecordCnt());
+//     ASSERT_EQ(7, (int64_t)table->GetRecordIdxCnt());
+//     ASSERT_EQ(2, (int64_t)table->GetRecordPkCnt());
+//     ::openmldb::storage::UpdateTTLMeta update_ttl(
+//         ::openmldb::storage::TTLSt(3 * 60 * 1000, 0, ::openmldb::storage::kAbsOrLat));
+//     table->SetTTL(update_ttl);
+//     table->SchedGc();
+//     ASSERT_EQ(5, (int64_t)table->GetRecordCnt());
+//     ASSERT_EQ(5, (int64_t)table->GetRecordIdxCnt());
+//     ASSERT_EQ(2, (int64_t)table->GetRecordPkCnt());
+//     update_ttl = ::openmldb::storage::UpdateTTLMeta(::openmldb::storage::TTLSt(0, 1, ::openmldb::storage::kAbsOrLat));
+//     table->SetTTL(update_ttl);
+//     table->SchedGc();
+//     ASSERT_EQ(4, (int64_t)table->GetRecordCnt());
+//     ASSERT_EQ(4, (int64_t)table->GetRecordIdxCnt());
+//     ASSERT_EQ(2, (int64_t)table->GetRecordPkCnt());
+//     update_ttl = ::openmldb::storage::UpdateTTLMeta(
+//         ::openmldb::storage::TTLSt(1 * 60 * 1000, 1, ::openmldb::storage::kAbsOrLat));
+//     table->SetTTL(update_ttl);
+//     table->SchedGc();
+//     ASSERT_EQ(2, (int64_t)table->GetRecordCnt());
+//     ASSERT_EQ(2, (int64_t)table->GetRecordIdxCnt());
+//     ASSERT_EQ(2, (int64_t)table->GetRecordPkCnt());
+//     {
+//         ::openmldb::api::LogEntry entry;
+//         entry.set_log_index(0);
+//         entry.set_pk("test1");
+//         entry.set_ts(now - 5 * (60 * 1000) - 1000);
+//         entry.set_value(::openmldb::test::EncodeKV("test1", "value1"));
+//         ASSERT_TRUE(table->IsExpire(entry));
+//     }
+//     {
+//         ::openmldb::api::LogEntry entry;
+//         entry.set_log_index(0);
+//         entry.set_pk("test1");
+//         entry.set_ts(now - 3 * (60 * 1000) - 1000);
+//         entry.set_value(::openmldb::test::EncodeKV("test1", "value1"));
+//         ASSERT_TRUE(table->IsExpire(entry));
+//     }
+//     {
+//         ::openmldb::api::LogEntry entry;
+//         entry.set_log_index(0);
+//         entry.set_pk("test1");
+//         entry.set_ts(now - 2 * (60 * 1000) - 1000);
+//         entry.set_value(::openmldb::test::EncodeKV("test1", "value1"));
+//         ASSERT_TRUE(table->IsExpire(entry));
+//     }
+//     {
+//         ::openmldb::api::LogEntry entry;
+//         entry.set_log_index(0);
+//         entry.set_pk("test1");
+//         entry.set_ts(now - 1 * (60 * 1000) - 1000);
+//         entry.set_value(::openmldb::test::EncodeKV("test1", "value1"));
+//         ASSERT_TRUE(table->IsExpire(entry));
+//     }
+//     table->SchedGc();
+//     ASSERT_EQ(0, (int64_t)table->GetRecordCnt());
+//     ASSERT_EQ(0, (int64_t)table->GetRecordIdxCnt());
+//     ASSERT_EQ(2, (int64_t)table->GetRecordPkCnt());
+//     {
+//         ::openmldb::api::LogEntry entry;
+//         entry.set_log_index(0);
+//         entry.set_pk("test1");
+//         entry.set_ts(now - 1 * (60 * 1000) - 1000);
+//         entry.set_value(::openmldb::test::EncodeKV("test1", "value1"));
+//         ASSERT_TRUE(table->IsExpire(entry));
+//     }
+//     FLAGS_gc_safe_offset = offset;
+
+//     delete table;
+//     std::string path = FLAGS_hdd_root_path + "/37_1";
+//     RemoveData(path);
+// }
+
+// TEST_F(DiskTableTest, GcAbsAndLat) {
+
+//     int32_t offset = FLAGS_gc_safe_offset;
+//     FLAGS_gc_safe_offset = 0;
+
+//     ::openmldb::api::TableMeta table_meta;
+//     table_meta.set_tid(38);
+//     table_meta.set_pid(1);
+//     table_meta.set_storage_mode(::openmldb::common::kHDD);
+//     table_meta.set_mode(::openmldb::api::TableMode::kTableLeader);
+//     ::openmldb::common::ColumnDesc* column_desc = table_meta.add_column_desc();
+//     column_desc->set_name("idx0");
+//     column_desc->set_data_type(::openmldb::type::kString);
+//     ::openmldb::common::ColumnDesc* column_desc1 = table_meta.add_column_desc();
+//     column_desc1->set_name("value");
+//     column_desc1->set_data_type(::openmldb::type::kString);
+    
+//     ::openmldb::common::ColumnKey* column_key = table_meta.add_column_key();
+//     column_key->set_index_name("idx0");
+//     column_key->add_col_name("idx0");
+//     auto ttl = column_key->mutable_ttl();
+//     ttl->set_ttl_type(::openmldb::type::TTLType::kAbsAndLat);
+//     ttl->set_abs_ttl(3);
+//     ttl->set_lat_ttl(3);
+
+//     DiskTable* table = new DiskTable(table_meta, FLAGS_hdd_root_path);
+
+//     table->Init();
+
+//     uint64_t now = ::baidu::common::timer::get_micros() / 1000;
+//     table->Put("test1", now - 3 * (60 * 1000) - 1000, "value1", 6);
+//     table->Put("test1", now - 3 * (60 * 1000) - 1000, "value1", 6);
+//     table->Put("test1", now - 2 * (60 * 1000) - 1000, "value2", 6);
+//     table->Put("test1", now - 1 * (60 * 1000) - 1000, "value3", 6);
+//     table->Put("test2", now - 4 * (60 * 1000) - 1000, "value4", 6);
+//     table->Put("test2", now - 3 * (60 * 1000) - 1000, "value5", 6);
+//     table->Put("test2", now - 2 * (60 * 1000) - 1000, "value6", 6);
+//     ASSERT_EQ(7, (int64_t)table->GetRecordCnt());
+//     ASSERT_EQ(7, (int64_t)table->GetRecordIdxCnt());
+//     ASSERT_EQ(2, (int64_t)table->GetRecordPkCnt());
+//     ::openmldb::storage::UpdateTTLMeta update_ttl(
+//         ::openmldb::storage::TTLSt(1 * 60 * 1000, 0, ::openmldb::storage::kAbsAndLat));
+//     table->SetTTL(update_ttl);
+//     table->SchedGc();
+//     ASSERT_EQ(6, (int64_t)table->GetRecordCnt());
+//     ASSERT_EQ(6, (int64_t)table->GetRecordIdxCnt());
+//     ASSERT_EQ(2, (int64_t)table->GetRecordPkCnt());
+//     {
+//         ::openmldb::api::LogEntry entry;
+//         entry.set_log_index(0);
+//         entry.set_pk("test1");
+//         entry.set_ts(now - 4 * (60 * 1000) - 1000);
+//         entry.set_value(::openmldb::test::EncodeKV("test1", "value1"));
+//         ASSERT_FALSE(table->IsExpire(entry));
+//     }
+//     {
+//         ::openmldb::api::LogEntry entry;
+//         entry.set_log_index(0);
+//         entry.set_pk("test1");
+//         entry.set_ts(now - 3 * (60 * 1000) - 1000);
+//         entry.set_value(::openmldb::test::EncodeKV("test1", "value1"));
+//         ASSERT_FALSE(table->IsExpire(entry));
+//     }
+//     {
+//         ::openmldb::api::LogEntry entry;
+//         entry.set_log_index(0);
+//         entry.set_pk("test1");
+//         entry.set_ts(now - 2 * (60 * 1000) - 1000);
+//         entry.set_value(::openmldb::test::EncodeKV("test1", "value1"));
+//         ASSERT_FALSE(table->IsExpire(entry));
+//     }
+//     update_ttl = ::openmldb::storage::UpdateTTLMeta(::openmldb::storage::TTLSt(0, 1, ::openmldb::storage::kAbsAndLat));
+//     table->SetTTL(update_ttl);
+//     table->SchedGc();
+//     ASSERT_EQ(6, (int64_t)table->GetRecordCnt());
+//     ASSERT_EQ(6, (int64_t)table->GetRecordIdxCnt());
+//     ASSERT_EQ(2, (int64_t)table->GetRecordPkCnt());
+//     update_ttl = ::openmldb::storage::UpdateTTLMeta(
+//         ::openmldb::storage::TTLSt(1 * 60 * 1000, 1, ::openmldb::storage::kAbsAndLat));
+//     table->SetTTL(update_ttl);
+//     table->SchedGc();
+//     ASSERT_EQ(6, (int64_t)table->GetRecordCnt());
+//     ASSERT_EQ(6, (int64_t)table->GetRecordIdxCnt());
+//     ASSERT_EQ(2, (int64_t)table->GetRecordPkCnt());
+//     table->SchedGc();
+//     ASSERT_EQ(2, (int64_t)table->GetRecordCnt());
+//     ASSERT_EQ(2, (int64_t)table->GetRecordIdxCnt());
+//     ASSERT_EQ(2, (int64_t)table->GetRecordPkCnt());
+//     {
+//         ::openmldb::api::LogEntry entry;
+//         entry.set_log_index(0);
+//         entry.set_pk("test1");
+//         entry.set_ts(now - 3 * (60 * 1000) - 1000);
+//         entry.set_value(::openmldb::test::EncodeKV("test1", "value1"));
+//         ASSERT_TRUE(table->IsExpire(entry));
+//     }
+//     {
+//         ::openmldb::api::LogEntry entry;
+//         entry.set_log_index(0);
+//         entry.set_pk("test1");
+//         entry.set_ts(now - 2 * (60 * 1000) - 1000);
+//         entry.set_value(::openmldb::test::EncodeKV("test1", "value1"));
+//         ASSERT_TRUE(table->IsExpire(entry));
+//     }
+//     {
+//         ::openmldb::api::LogEntry entry;
+//         entry.set_log_index(0);
+//         entry.set_pk("test1");
+//         entry.set_value(::openmldb::test::EncodeKV("test1", "value1"));
+//         entry.set_ts(now - 1 * (60 * 1000) - 1000);
+//         ASSERT_FALSE(table->IsExpire(entry));
+//     }
+//     FLAGS_gc_safe_offset = offset;
+
+//     delete table;
+//     std::string path = FLAGS_hdd_root_path + "/38_1";
+//     RemoveData(path);
+// }
 
 
 }  // namespace storage
