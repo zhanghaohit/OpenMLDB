@@ -382,6 +382,7 @@ class DiskTable : public Table {
     }
 
     int CreateCheckPoint(const std::string& checkpoint_dir);
+    bool DeleteIndex(const std::string& idx_name);
 
  private:
     rocksdb::DB* db_;
