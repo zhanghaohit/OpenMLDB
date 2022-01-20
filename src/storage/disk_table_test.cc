@@ -1755,6 +1755,7 @@ TEST_F(DiskTableTest, TableIteratorTSNew) {
     table_meta.set_pid(1);
     table_meta.set_storage_mode(::openmldb::common::kHDD);
     table_meta.set_mode(::openmldb::api::TableMode::kTableLeader);
+    table_meta.set_format_version(1);
     ::openmldb::common::ColumnDesc* column_desc = table_meta.add_column_desc();
     column_desc->set_name("card");
     column_desc->set_data_type(::openmldb::type::kString);
@@ -1887,6 +1888,7 @@ TEST_F(DiskTableTest, TraverseIteratorCountNew) {
     table_meta.set_pid(1);
     table_meta.set_storage_mode(::openmldb::common::kHDD);
     table_meta.set_mode(::openmldb::api::TableMode::kTableLeader);
+    table_meta.set_format_version(1);
     ::openmldb::common::ColumnDesc* column_desc = table_meta.add_column_desc();
     column_desc->set_name("card");
     column_desc->set_data_type(::openmldb::type::kString);
@@ -2056,6 +2058,7 @@ TEST_F(DiskTableTest, AbsAndLatSetGetNew) {
     table_meta.set_pid(1);
     table_meta.set_storage_mode(::openmldb::common::kHDD);
     table_meta.set_mode(::openmldb::api::TableMode::kTableLeader);
+    table_meta.set_format_version(1);
     ::openmldb::common::ColumnDesc* column_desc = table_meta.add_column_desc();
     column_desc->set_name("card");
     column_desc->set_data_type(::openmldb::type::kString);
@@ -2184,6 +2187,7 @@ TEST_F(DiskTableTest, AbsOrLatSetGetNew) {
     table_meta.set_pid(1);
     table_meta.set_storage_mode(::openmldb::common::kHDD);
     table_meta.set_mode(::openmldb::api::TableMode::kTableLeader);
+    table_meta.set_format_version(1);
     ::openmldb::common::ColumnDesc* column_desc = table_meta.add_column_desc();
     column_desc->set_name("card");
     column_desc->set_data_type(::openmldb::type::kString);
