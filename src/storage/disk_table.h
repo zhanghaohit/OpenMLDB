@@ -383,6 +383,18 @@ class DiskTable : public Table {
 
     int CreateCheckPoint(const std::string& checkpoint_dir);
     bool DeleteIndex(const std::string& idx_name);
+    uint64_t GetRecordIdxCnt();
+    bool GetRecordIdxCnt(uint32_t idx, uint64_t** stat, uint32_t* size);
+    uint64_t GetRecordPkCnt();
+    inline uint64_t GetRecordByteSize() const { 
+        // TODO
+        return 0; 
+    }
+    uint64_t GetRecordIdxByteSize();
+    uint64_t Release();
+
+
+
 
  private:
     rocksdb::DB* db_;

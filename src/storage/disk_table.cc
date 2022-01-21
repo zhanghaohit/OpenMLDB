@@ -1047,5 +1047,30 @@ bool DiskTable::DeleteIndex(const std::string& idx_name) {
     return true;
 }
 
+uint64_t DiskTable::GetRecordIdxCnt() {
+    //TODO
+    return 0;
+}
+
+bool DiskTable::GetRecordIdxCnt(uint32_t idx, uint64_t** stat, uint32_t* size) {
+    //TODO
+    return true;
+}
+
+uint64_t DiskTable::GetRecordPkCnt() {
+    // TODO
+    return 0;
+}
+
+uint64_t DiskTable::GetRecordIdxByteSize() {
+    // TODO
+    return 0;
+}
+
+uint64_t DiskTable::Release() {
+    // TODO
+    return 0;
+}
+
 }  // namespace storage
 }  // namespace openmldb
