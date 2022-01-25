@@ -80,7 +80,7 @@ class TableTest : public ::testing::Test {
 void putRun(::openmldb::common::StorageMode storageMode) {
     std::map<std::string, uint32_t> mapping;
     mapping.insert(std::make_pair("idx0", 0));
-    Table* table = Table::CreateTable("tx_log", 1, 1, 8, mapping, 10, ::openmldb::type::kAbsoluteTime, storageMode, FLAGS_hdd_root_path);
+    Table* table = Table::CreateTable("tx_log", 1, 1, 8, mapping, 10, ::openmldb::type::kAbsoluteTime, FLAGS_hdd_root_path, storageMode);
     table->Init();
     table->Put("test", 9537, "test", 4);
     ASSERT_EQ(1, (int64_t)table->GetRecordCnt());
