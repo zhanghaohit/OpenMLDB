@@ -24,14 +24,51 @@
 #include "storage/mem_table.h"
 #include "storage/ticket.h"
 #include "test/util.h"
+#include "storage/table.h"
 
+#include "storage/disk_table.h"
+#include <iostream>
+#include <utility>
+#include "base/file_util.h"
+
+using ::openmldb::codec::SchemaCodec;
+
+DECLARE_string(ssd_root_path);
+DECLARE_string(hdd_root_path);
 DECLARE_uint32(max_traverse_cnt);
 DECLARE_int32(gc_safe_offset);
 
 namespace openmldb {
 namespace storage {
 
+inline uint32_t GenRand() {
+    srand((unsigned)time(NULL));
+    return rand() % 10000000 + 1;
+}
+
+void RemoveData(const std::string& path) {
+    ::openmldb::base::RemoveDir(path + "/data");
+    ::openmldb::base::RemoveDir(path);
+    ::openmldb::base::RemoveDir(FLAGS_hdd_root_path);
+    ::openmldb::base::RemoveDir(FLAGS_ssd_root_path);
+}
+
 using ::openmldb::codec::SchemaCodec;
+
+class DiskTestEnvironment : public ::testing::Environment{
+    virtual void SetUp() {
+        for (int i = 1; i < 50; i++) {
+            std::string path = FLAGS_hdd_root_path + "/" + std::to_string(i) +  "_1";
+            RemoveData(path);
+        }
+    }
+    virtual void TearDown() {
+        for (int i = 1; i < 50; i++) {
+            std::string path = FLAGS_hdd_root_path + "/" + std::to_string(i) +  "_1";
+            RemoveData(path);
+        }
+    }
+};
 
 class TableTest : public ::testing::Test {
  public:
@@ -39,10 +76,11 @@ class TableTest : public ::testing::Test {
     ~TableTest() {}
 };
 
-TEST_F(TableTest, Put) {
+
+void putRun(::openmldb::common::StorageMode storageMode) {
     std::map<std::string, uint32_t> mapping;
     mapping.insert(std::make_pair("idx0", 0));
-    MemTable* table = new MemTable("tx_log", 1, 1, 8, mapping, 10, ::openmldb::type::kAbsoluteTime);
+    Table* table = Table::CreateTable("tx_log", 1, 1, 8, mapping, 10, ::openmldb::type::kAbsoluteTime, storageMode, FLAGS_hdd_root_path);
     table->Init();
     table->Put("test", 9537, "test", 4);
     ASSERT_EQ(1, (int64_t)table->GetRecordCnt());
@@ -56,7 +94,14 @@ TEST_F(TableTest, Put) {
     it->Next();
     ASSERT_FALSE(it->Valid());
     delete it;
-    delete table;
+}
+
+TEST_F(TableTest, PutMem) {
+    putRun(::openmldb::common::StorageMode::kMemory);
+}
+
+TEST_F(TableTest, PutDisk) {
+    putRun(::openmldb::common::StorageMode::kHDD);
 }
 
 TEST_F(TableTest, MultiDimissionDelete) {
@@ -1055,7 +1100,12 @@ TEST_F(TableTest, GcAbsAndLat) {
 
 int main(int argc, char** argv) {
     FLAGS_max_traverse_cnt = 200000;
+    ::testing::AddGlobalTestEnvironment(new ::openmldb::storage::DiskTestEnvironment);
     ::testing::InitGoogleTest(&argc, argv);
     ::openmldb::base::SetLogLevel(INFO);
+    // FLAGS_hdd_root_path = "/tmp/" + std::to_string(::openmldb::storage::GenRand());
+    // FLAGS_ssd_root_path = "/tmp/" + std::to_string(::openmldb::storage::GenRand());
+    FLAGS_hdd_root_path = "/tmp/" + std::to_string(1);
+    FLAGS_ssd_root_path = "/tmp/" + std::to_string(1);
     return RUN_ALL_TESTS();
 }
