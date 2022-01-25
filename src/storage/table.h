@@ -175,6 +175,15 @@ class Table {
 
     bool CheckFieldExist(const std::string& name);
 
+    virtual bool DeleteIndex(const std::string& idx_name) = 0;
+
+    virtual uint64_t GetRecordIdxCnt() = 0;
+    virtual bool GetRecordIdxCnt(uint32_t idx, uint64_t** stat, uint32_t* size) = 0;
+    virtual uint64_t GetRecordPkCnt() = 0;
+    virtual inline uint64_t GetRecordByteSize() const = 0;
+    virtual uint64_t GetRecordIdxByteSize() = 0;
+    virtual uint64_t Release() = 0;
+
  protected:
     void UpdateTTL();
     bool InitFromMeta();
