@@ -58,13 +58,13 @@ using ::openmldb::codec::SchemaCodec;
 
 class DiskTestEnvironment : public ::testing::Environment{
     virtual void SetUp() {
-        for (int i = 1; i < 50; i++) {
+        for (int i = 1; i <= 23; i++) {
             std::string path = FLAGS_hdd_root_path + "/" + std::to_string(i) +  "_1";
             RemoveData(path);
         }
     }
     virtual void TearDown() {
-        for (int i = 1; i < 50; i++) {
+        for (int i = 1; i <= 23; i++) {
             std::string path = FLAGS_hdd_root_path + "/" + std::to_string(i) +  "_1";
             RemoveData(path);
         }
@@ -502,7 +502,7 @@ TEST_F(TableTest, TableUnrefDisk) {
     TableUnref(::openmldb::common::StorageMode::kHDD);
 }
 
-void TableIterator(::openmldb::common::StorageMode storageMode) {
+void TableIteratorRun(::openmldb::common::StorageMode storageMode) {
     std::map<std::string, uint32_t> mapping;
     mapping.insert(std::make_pair("idx0", 0));
     Table* table = Table::CreateTable("tx_log", 13, 1, 8, mapping, 0, ::openmldb::type::kAbsoluteTime,
@@ -576,11 +576,11 @@ void TableIterator(::openmldb::common::StorageMode storageMode) {
 }
 
 TEST_F(TableTest, TableIteratorMem) {
-    TableIterator(::openmldb::common::StorageMode::kMemory);
+    TableIteratorRun(::openmldb::common::StorageMode::kMemory);
 }
 
 TEST_F(TableTest, TableIteratorDisk) {
-    TableIterator(::openmldb::common::StorageMode::kHDD);
+    TableIteratorRun(::openmldb::common::StorageMode::kHDD);
 }
 
 void TableIteratorNoPk(::openmldb::common::StorageMode storageMode) {
