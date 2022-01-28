@@ -561,6 +561,8 @@ void TableIteratorRun(::openmldb::common::StorageMode storageMode) {
         it->Next();
         ASSERT_FALSE(it->Valid());
     }
+
+    // TODO:fuzzy search of seek
     
     it->Seek("none", 11111);
     ASSERT_TRUE(it->Valid());
@@ -626,18 +628,36 @@ void TableIteratorNoPk(::openmldb::common::StorageMode storageMode) {
     // Ticket ticket;
     TableIterator* it = table->NewTraverseIterator(0);
     it->SeekToFirst();
-    ASSERT_STREQ("pk10", it->GetPK().c_str());
-    ASSERT_EQ(9527, (int64_t)it->GetKey());
-    it->Next();
-    ASSERT_STREQ("pk4", it->GetPK().c_str());
-    ASSERT_EQ(9524, (int64_t)it->GetKey());
-    it->Next();
-    ASSERT_STREQ("pk8", it->GetPK().c_str());
-    ASSERT_EQ(9526, (int64_t)it->GetKey());
-    it->Next();
-    ASSERT_STREQ("pk0", it->GetPK().c_str());
-    ASSERT_EQ(9522, (int64_t)it->GetKey());
+    
+    if (storageMode == ::openmldb::common::StorageMode::kMemory) {
+        ASSERT_STREQ("pk10", it->GetPK().c_str());
+        ASSERT_EQ(9527, (int64_t)it->GetKey());
+        it->Next();
+        ASSERT_STREQ("pk4", it->GetPK().c_str());
+        ASSERT_EQ(9524, (int64_t)it->GetKey());
+        it->Next();
+        ASSERT_STREQ("pk8", it->GetPK().c_str());
+        ASSERT_EQ(9526, (int64_t)it->GetKey());
+        it->Next();
+        ASSERT_STREQ("pk0", it->GetPK().c_str());
+        ASSERT_EQ(9522, (int64_t)it->GetKey());
+    } else {
+        ASSERT_STREQ("pk0", it->GetPK().c_str());
+        ASSERT_EQ(9522, (int64_t)it->GetKey());
+        it->Next();
+        ASSERT_STREQ("pk10", it->GetPK().c_str());
+        ASSERT_EQ(9527, (int64_t)it->GetKey());
+        it->Next();
+        ASSERT_STREQ("pk2", it->GetPK().c_str());
+        ASSERT_EQ(9523, (int64_t)it->GetKey());
+        it->Next();
+        ASSERT_STREQ("pk4", it->GetPK().c_str());
+        ASSERT_EQ(9524, (int64_t)it->GetKey());
+        
+    }
+    
     delete it;
+
     it = table->NewTraverseIterator(0);
     it->Seek("pk4", 9526);
     ASSERT_STREQ("pk4", it->GetPK().c_str());
@@ -648,11 +668,21 @@ void TableIteratorNoPk(::openmldb::common::StorageMode storageMode) {
     it = table->NewTraverseIterator(0);
     it->Seek("pk4", 9526);
     ASSERT_TRUE(it->Valid());
-    ASSERT_STREQ("pk8", it->GetPK().c_str());
-    ASSERT_EQ(9526, (int64_t)it->GetKey());
-    it->Next();
-    ASSERT_STREQ("pk0", it->GetPK().c_str());
-    ASSERT_EQ(9522, (int64_t)it->GetKey());
+
+    if (storageMode == ::openmldb::common::StorageMode::kMemory) {
+        ASSERT_STREQ("pk8", it->GetPK().c_str());
+        ASSERT_EQ(9526, (int64_t)it->GetKey());
+        it->Next();
+        ASSERT_STREQ("pk0", it->GetPK().c_str());
+        ASSERT_EQ(9522, (int64_t)it->GetKey());
+    } else {
+        ASSERT_STREQ("pk6", it->GetPK().c_str());
+        ASSERT_EQ(9525, (int64_t)it->GetKey());
+        it->Next();
+        ASSERT_STREQ("pk8", it->GetPK().c_str());
+        ASSERT_EQ(9526, (int64_t)it->GetKey());
+    }
+    
     delete it;
 }
 
@@ -695,7 +725,12 @@ void TableIteratorCount(::openmldb::common::StorageMode storageMode) {
         count++;
         it->Next();
     }
-    ASSERT_EQ(44471, count);
+    if (storageMode == ::openmldb::common::StorageMode::kMemory) {
+        ASSERT_EQ(44471, count);
+    } else {
+        ASSERT_EQ(55551, count);
+    }
+
     delete it;
 
     for (int i = 0; i < 200000; i++) {
