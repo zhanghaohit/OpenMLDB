@@ -81,9 +81,8 @@ Table* Table::CreateTable(const std::string& name, uint32_t id, uint32_t pid, ui
     }
 }
 
-Table* Table::CreateTable(const ::openmldb::api::TableMeta& table_meta, const std::string& db_root_path, 
-        ::openmldb::common::StorageMode storage_mode) {
-    if (storage_mode == ::openmldb::common::StorageMode::kMemory) {
+Table* Table::CreateTable(const ::openmldb::api::TableMeta& table_meta, const std::string& db_root_path) {
+    if (table_meta.storage_mode() == ::openmldb::common::StorageMode::kMemory) {
         return new MemTable(table_meta);
     } else {
         return new DiskTable(table_meta, db_root_path);

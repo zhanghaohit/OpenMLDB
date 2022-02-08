@@ -111,6 +111,7 @@ void MultiDimissionDelete(::openmldb::common::StorageMode storageMode) {
     table_meta->set_tid(2);
     table_meta->set_pid(1);
     table_meta->set_seg_cnt(1);
+    table_meta->set_storage_mode(storageMode);
     ::openmldb::common::ColumnDesc* desc = table_meta->add_column_desc();
     desc->set_name("card");
     desc->set_data_type(::openmldb::type::kString);
@@ -128,7 +129,7 @@ void MultiDimissionDelete(::openmldb::common::StorageMode storageMode) {
     column_key->set_index_name("mcc");
     ttl = column_key->mutable_ttl();
     ttl->set_abs_ttl(5);
-    Table* table = Table::CreateTable(*table_meta, FLAGS_hdd_root_path, storageMode);
+    Table* table = Table::CreateTable(*table_meta, FLAGS_hdd_root_path);
     table->Init();
     table->DeleteIndex("mcc");
     table->SchedGc();
@@ -759,6 +760,7 @@ void TableIteratorTS(::openmldb::common::StorageMode storageMode) {
     table_meta.set_seg_cnt(8);
     table_meta.set_mode(::openmldb::api::TableMode::kTableLeader);
     table_meta.set_key_entry_max_height(8);
+    table_meta.set_storage_mode(storageMode);
     table_meta.set_format_version(1);
     SchemaCodec::SetColumnDesc(table_meta.add_column_desc(), "card", ::openmldb::type::kString);
     SchemaCodec::SetColumnDesc(table_meta.add_column_desc(), "mcc", ::openmldb::type::kString);
@@ -768,7 +770,7 @@ void TableIteratorTS(::openmldb::common::StorageMode storageMode) {
     SchemaCodec::SetIndex(table_meta.add_column_key(), "card", "card", "ts1", ::openmldb::type::kAbsoluteTime, 0, 0);
     SchemaCodec::SetIndex(table_meta.add_column_key(), "card1", "card", "ts2", ::openmldb::type::kAbsoluteTime, 0, 0);
     SchemaCodec::SetIndex(table_meta.add_column_key(), "mcc", "mcc", "ts1", ::openmldb::type::kAbsoluteTime, 0, 0);
-    Table* table = Table::CreateTable(table_meta, FLAGS_hdd_root_path, storageMode);
+    Table* table = Table::CreateTable(table_meta, FLAGS_hdd_root_path);
     table->Init();
     codec::SDKCodec codec(table_meta);
 
@@ -890,6 +892,7 @@ void TraverseIteratorCount(::openmldb::common::StorageMode storageMode) {
     table_meta.set_mode(::openmldb::api::TableMode::kTableLeader);
     table_meta.set_key_entry_max_height(8);
     table_meta.set_format_version(1);
+    table_meta.set_storage_mode(storageMode);
     SchemaCodec::SetColumnDesc(table_meta.add_column_desc(), "card", ::openmldb::type::kString);
     SchemaCodec::SetColumnDesc(table_meta.add_column_desc(), "mcc", ::openmldb::type::kString);
     SchemaCodec::SetColumnDesc(table_meta.add_column_desc(), "price", ::openmldb::type::kBigInt);
@@ -899,7 +902,7 @@ void TraverseIteratorCount(::openmldb::common::StorageMode storageMode) {
     SchemaCodec::SetIndex(table_meta.add_column_key(), "card1", "card", "ts2", ::openmldb::type::kAbsoluteTime, 0, 0);
     SchemaCodec::SetIndex(table_meta.add_column_key(), "mcc", "mcc", "ts1", ::openmldb::type::kAbsoluteTime, 0, 0);
 
-    Table* table = Table::CreateTable(table_meta, FLAGS_hdd_root_path, storageMode);
+    Table* table = Table::CreateTable(table_meta, FLAGS_hdd_root_path);
 
     table->Init();
     codec::SDKCodec codec(table_meta);
@@ -962,6 +965,7 @@ void UpdateTTL(::openmldb::common::StorageMode storageMode) {
     table_meta.set_seg_cnt(8);
     table_meta.set_mode(::openmldb::api::TableMode::kTableLeader);
     table_meta.set_key_entry_max_height(8);
+    table_meta.set_storage_mode(storageMode);
     SchemaCodec::SetColumnDesc(table_meta.add_column_desc(), "card", ::openmldb::type::kString);
     SchemaCodec::SetColumnDesc(table_meta.add_column_desc(), "mcc", ::openmldb::type::kString);
     SchemaCodec::SetColumnDesc(table_meta.add_column_desc(), "price", ::openmldb::type::kBigInt);
@@ -971,7 +975,7 @@ void UpdateTTL(::openmldb::common::StorageMode storageMode) {
     SchemaCodec::SetIndex(table_meta.add_column_key(), "card1", "card", "ts2", ::openmldb::type::kAbsoluteTime, 5, 0);
     SchemaCodec::SetIndex(table_meta.add_column_key(), "mcc", "mcc", "ts1", ::openmldb::type::kAbsoluteTime, 10, 0);
 
-    Table* table = Table::CreateTable(table_meta, FLAGS_hdd_root_path, storageMode);
+    Table* table = Table::CreateTable(table_meta, FLAGS_hdd_root_path);
     table->Init();
     ASSERT_EQ(10, (int64_t)table->GetIndex(0)->GetTTL()->abs_ttl / (10 * 6000));
     ASSERT_EQ(5, (int64_t)table->GetIndex(1)->GetTTL()->abs_ttl / (10 * 6000));
@@ -1002,6 +1006,7 @@ void AbsAndLatSetGet(::openmldb::common::StorageMode storageMode) {
     table_meta.set_mode(::openmldb::api::TableMode::kTableLeader);
     table_meta.set_key_entry_max_height(8);
     table_meta.set_format_version(1);
+    table_meta.set_storage_mode(storageMode);
     SchemaCodec::SetColumnDesc(table_meta.add_column_desc(), "card", ::openmldb::type::kString);
     SchemaCodec::SetColumnDesc(table_meta.add_column_desc(), "mcc", ::openmldb::type::kString);
     SchemaCodec::SetColumnDesc(table_meta.add_column_desc(), "price", ::openmldb::type::kBigInt);
@@ -1010,7 +1015,7 @@ void AbsAndLatSetGet(::openmldb::common::StorageMode storageMode) {
     SchemaCodec::SetIndex(table_meta.add_column_key(), "card", "card", "ts1", ::openmldb::type::kAbsAndLat, 10, 12);
     SchemaCodec::SetIndex(table_meta.add_column_key(), "mcc", "mcc", "ts1", ::openmldb::type::kAbsAndLat, 10, 12);
     SchemaCodec::SetIndex(table_meta.add_column_key(), "mcc1", "mcc", "ts2", ::openmldb::type::kAbsAndLat, 2, 10);
-    Table* table = Table::CreateTable(table_meta, FLAGS_hdd_root_path, storageMode);
+    Table* table = Table::CreateTable(table_meta, FLAGS_hdd_root_path);
     table->Init();
     codec::SDKCodec codec(table_meta);
     uint64_t now = ::baidu::common::timer::get_micros() / 1000;
@@ -1094,6 +1099,7 @@ void AbsOrLatSetGet(::openmldb::common::StorageMode storageMode) {
     table_meta.set_mode(::openmldb::api::TableMode::kTableLeader);
     table_meta.set_key_entry_max_height(8);
     table_meta.set_format_version(1);
+    table_meta.set_storage_mode(storageMode);
     SchemaCodec::SetColumnDesc(table_meta.add_column_desc(), "card", ::openmldb::type::kString);
     SchemaCodec::SetColumnDesc(table_meta.add_column_desc(), "mcc", ::openmldb::type::kString);
     SchemaCodec::SetColumnDesc(table_meta.add_column_desc(), "price", ::openmldb::type::kBigInt);
@@ -1103,7 +1109,7 @@ void AbsOrLatSetGet(::openmldb::common::StorageMode storageMode) {
     SchemaCodec::SetIndex(table_meta.add_column_key(), "mcc", "mcc", "ts1", ::openmldb::type::kAbsOrLat, 10, 12);
     SchemaCodec::SetIndex(table_meta.add_column_key(), "mcc1", "mcc", "ts2", ::openmldb::type::kAbsOrLat, 2, 10);
 
-    Table* table = Table::CreateTable(table_meta, FLAGS_hdd_root_path, storageMode);
+    Table* table = Table::CreateTable(table_meta, FLAGS_hdd_root_path);
     table->Init();
     codec::SDKCodec codec(table_meta);
     uint64_t now = ::baidu::common::timer::get_micros() / 1000;
@@ -1181,13 +1187,14 @@ void GcAbsOrLat(::openmldb::common::StorageMode storageMode) {
     table_meta.set_mode(::openmldb::api::TableMode::kTableLeader);
     table_meta.set_key_entry_max_height(8);
     table_meta.set_format_version(1);
+    table_meta.set_storage_mode(storageMode);
     SchemaCodec::SetColumnDesc(table_meta.add_column_desc(), "idx0", ::openmldb::type::kString);
     SchemaCodec::SetColumnDesc(table_meta.add_column_desc(), "value", ::openmldb::type::kString);
     SchemaCodec::SetIndex(table_meta.add_column_key(), "idx0", "idx0", "", ::openmldb::type::kAbsOrLat, 4, 3);
 
     int32_t offset = FLAGS_gc_safe_offset;
     FLAGS_gc_safe_offset = 0;
-    Table* table = Table::CreateTable(table_meta, FLAGS_hdd_root_path, storageMode);
+    Table* table = Table::CreateTable(table_meta, FLAGS_hdd_root_path);
     table->Init();
     uint64_t now = ::baidu::common::timer::get_micros() / 1000;
     table->Put("test1", now - 3 * (60 * 1000) - 1000, "value1", 6);
@@ -1284,13 +1291,14 @@ void GcAbsAndLat(::openmldb::common::StorageMode storageMode) {
     table_meta.set_mode(::openmldb::api::TableMode::kTableLeader);
     table_meta.set_key_entry_max_height(8);
     table_meta.set_format_version(1);
+    table_meta.set_storage_mode(storageMode);
     SchemaCodec::SetColumnDesc(table_meta.add_column_desc(), "idx0", ::openmldb::type::kString);
     SchemaCodec::SetColumnDesc(table_meta.add_column_desc(), "value", ::openmldb::type::kString);
     SchemaCodec::SetIndex(table_meta.add_column_key(), "idx0", "idx0", "", ::openmldb::type::kAbsAndLat, 3, 3);
 
     int32_t offset = FLAGS_gc_safe_offset;
     FLAGS_gc_safe_offset = 0;
-    Table* table = Table::CreateTable(table_meta, FLAGS_hdd_root_path, storageMode);
+    Table* table = Table::CreateTable(table_meta, FLAGS_hdd_root_path);
     table->Init();
     uint64_t now = ::baidu::common::timer::get_micros() / 1000;
     table->Put("test1", now - 3 * (60 * 1000) - 1000, "value1", 6);
@@ -1394,6 +1402,7 @@ TEST_F (TableTest, TableIteratorTS2Disk) {
     table_meta.set_seg_cnt(8);
     table_meta.set_mode(::openmldb::api::TableMode::kTableLeader);
     table_meta.set_key_entry_max_height(8);
+    table_meta.set_storage_mode(::openmldb::common::StorageMode::kHDD);
     table_meta.set_format_version(1);
     SchemaCodec::SetColumnDesc(table_meta.add_column_desc(), "card", ::openmldb::type::kString);
     SchemaCodec::SetColumnDesc(table_meta.add_column_desc(), "mcc", ::openmldb::type::kString);
@@ -1403,7 +1412,7 @@ TEST_F (TableTest, TableIteratorTS2Disk) {
     SchemaCodec::SetIndex(table_meta.add_column_key(), "card", "card", "ts1", ::openmldb::type::kAbsoluteTime, 0, 0);
     SchemaCodec::SetIndex(table_meta.add_column_key(), "card1", "card", "ts2", ::openmldb::type::kAbsoluteTime, 0, 0);
     SchemaCodec::SetIndex(table_meta.add_column_key(), "mcc", "mcc", "ts1", ::openmldb::type::kAbsoluteTime, 0, 0);
-    Table* table = Table::CreateTable(table_meta, FLAGS_hdd_root_path, ::openmldb::common::StorageMode::kHDD);
+    Table* table = Table::CreateTable(table_meta, FLAGS_hdd_root_path);
     table->Init();
     codec::SDKCodec codec(table_meta);
 
@@ -1471,6 +1480,7 @@ TEST_F (TableTest, TableIteratorTS3Disk) {
     table_meta.set_mode(::openmldb::api::TableMode::kTableLeader);
     table_meta.set_key_entry_max_height(8);
     table_meta.set_format_version(1);
+    table_meta.set_storage_mode(::openmldb::common::StorageMode::kHDD);
     SchemaCodec::SetColumnDesc(table_meta.add_column_desc(), "card", ::openmldb::type::kString);
     SchemaCodec::SetColumnDesc(table_meta.add_column_desc(), "mcc", ::openmldb::type::kString);
     SchemaCodec::SetColumnDesc(table_meta.add_column_desc(), "price", ::openmldb::type::kBigInt);
@@ -1478,7 +1488,7 @@ TEST_F (TableTest, TableIteratorTS3Disk) {
     SchemaCodec::SetColumnDesc(table_meta.add_column_desc(), "ts2", ::openmldb::type::kBigInt);
     SchemaCodec::SetIndex(table_meta.add_column_key(), "card", "card", "ts1", ::openmldb::type::kAbsoluteTime, 0, 0);
     SchemaCodec::SetIndex(table_meta.add_column_key(), "mcc", "mcc", "ts2", ::openmldb::type::kAbsoluteTime, 0, 0);
-    Table* table = Table::CreateTable(table_meta, FLAGS_hdd_root_path, ::openmldb::common::StorageMode::kHDD);
+    Table* table = Table::CreateTable(table_meta, FLAGS_hdd_root_path);
     table->Init();
     codec::SDKCodec codec(table_meta);
 

@@ -52,8 +52,7 @@ class Table {
               ::openmldb::type::TTLType ttl_type,
               const std::string& db_root_path = "",
               ::openmldb::common::StorageMode storage_mode = openmldb::common::StorageMode::kMemory);
-    static Table* CreateTable( const ::openmldb::api::TableMeta& table_meta, const std::string& db_root_path = "", 
-            ::openmldb::common::StorageMode storage_mode = openmldb::common::StorageMode::kMemory);          
+    static Table* CreateTable( const ::openmldb::api::TableMeta& table_meta, const std::string& db_root_path = "");          
     int InitColumnDesc();
 
     virtual bool Put(const std::string& pk, uint64_t time, const char* data, uint32_t size) = 0;
