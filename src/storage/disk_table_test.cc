@@ -18,6 +18,7 @@
 #include "storage/ticket.h"
 #include "test/util.h"
 
+
 using ::openmldb::codec::SchemaCodec;
 
 DECLARE_string(ssd_root_path);
@@ -794,6 +795,7 @@ TEST_F(DiskTableTest, CompactFilterMulTs) {
     SchemaCodec::SetIndex(table_meta.add_column_key(), "card", "card", "ts1", ::openmldb::type::kAbsoluteTime, 3, 0);
     SchemaCodec::SetIndex(table_meta.add_column_key(), "card1", "card", "ts2", ::openmldb::type::kAbsoluteTime, 5, 0);
     SchemaCodec::SetIndex(table_meta.add_column_key(), "mcc", "mcc", "ts2", ::openmldb::type::kAbsoluteTime, 5, 0);
+
 
     DiskTable* table = new DiskTable(table_meta, FLAGS_hdd_root_path);
     ASSERT_TRUE(table->Init());

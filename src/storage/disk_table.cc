@@ -704,6 +704,9 @@ TableIterator* DiskTable::NewTraverseIterator(uint32_t index) {
                                          expire_time, expire_cnt);
 }
 
+
+
+
 // TableIterator* DiskTable::NewTraverseIterator(uint32_t index,
 //                                               uint32_t ts_index) {
 //     if (ts_index < 0) {
