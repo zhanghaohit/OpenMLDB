@@ -563,10 +563,12 @@ void TableIteratorRun(::openmldb::common::StorageMode storageMode) {
         ASSERT_FALSE(it->Valid());
     }
 
+    it->Seek("none", 11111);
     if (storageMode == ::openmldb::common::StorageMode::kMemory) {
-        it->Seek("none", 11111);
         ASSERT_TRUE(it->Valid());
-    }    
+    } else {
+        ASSERT_FALSE(it->Valid());
+    }
     
 
     it->Seek("test", 30);
@@ -956,7 +958,7 @@ void TraverseIteratorCount(::openmldb::common::StorageMode storageMode) {
 
     if (storageMode == ::openmldb::common::StorageMode::kMemory) {
         ASSERT_EQ(1000, count);
-        ASSERT_EQ(1100, (int64_t)it->GetCount());
+        ASSERT_EQ(1000, (int64_t)it->GetCount());
     } else {
         ASSERT_EQ(100, count);
         ASSERT_EQ(100, (int64_t)it->GetCount());
@@ -973,7 +975,7 @@ void TraverseIteratorCount(::openmldb::common::StorageMode storageMode) {
     }
     if (storageMode == ::openmldb::common::StorageMode::kMemory) {
         ASSERT_EQ(1000, count);
-        ASSERT_EQ(1100, (int64_t)it->GetCount());
+        ASSERT_EQ(1000, (int64_t)it->GetCount());
     } else {
         ASSERT_EQ(1000, count);
         ASSERT_EQ(1000, (int64_t)it->GetCount());
