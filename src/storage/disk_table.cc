@@ -672,7 +672,6 @@ TableIterator* DiskTable::NewIterator(uint32_t idx, const std::string& pk,
 
 TableIterator* DiskTable::NewTraverseIterator(uint32_t index) {
     std::shared_ptr<IndexDef> index_def = table_index_.GetIndex(index);
-    PDLOG(ERROR, "%d", index);
     if (!index_def) {
         return NULL;
     }
@@ -693,7 +692,6 @@ TableIterator* DiskTable::NewTraverseIterator(uint32_t index) {
     ro.snapshot = snapshot;
     // ro.prefix_same_as_start = true;
     ro.pin_data = true;
-    PDLOG(ERROR, "%d", inner_pos);
     rocksdb::Iterator* it = db_->NewIterator(ro, cf_hs_[inner_pos + 1]);
     if (inner_index && inner_index->GetIndex().size() > 1) {
         auto ts_col = index_def->GetTsColumn();
