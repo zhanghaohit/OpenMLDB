@@ -246,9 +246,10 @@ bool DiskTable::Put(uint64_t time, const std::string& value,
                 it->key().c_str(), it->idx(), id_, pid_);
             return false;
         }
+        auto inner_index = table_index_.GetInnerIndex(inner_pos);
         auto ts_col = index_def->GetTsColumn();
         std::string combine_key;
-        if (ts_col) {
+        if (inner_index->GetIndex().size() > 1 && ts_col) {
             combine_key = CombineKeyTs(it->key(), time, ts_col->GetId());
         } else {
             combine_key = CombineKeyTs(it->key(), time);
