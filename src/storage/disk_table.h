@@ -394,9 +394,6 @@ class DiskTable : public Table {
     uint64_t GetRecordIdxByteSize() override;
     uint64_t Release() override;
 
-
-
-
  private:
     rocksdb::DB* db_;
     rocksdb::WriteOptions write_opts_;

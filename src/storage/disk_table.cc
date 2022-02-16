@@ -704,9 +704,6 @@ TableIterator* DiskTable::NewTraverseIterator(uint32_t index) {
                                          expire_time, expire_cnt);
 }
 
-
-
-
 // TableIterator* DiskTable::NewTraverseIterator(uint32_t index,
 //                                               uint32_t ts_index) {
 //     if (ts_index < 0) {
@@ -1052,26 +1049,7 @@ void DiskTableTraverseIterator::NextPK() {
 }
 
 bool DiskTable::DeleteIndex(const std::string& idx_name) {
-    std::shared_ptr<IndexDef> index_def = table_index_.GetIndex(idx_name);
-    if (!index_def) {
-        PDLOG(WARNING, "index %s is not exist. tid %u pid %u", idx_name.c_str(), id_, pid_);
-        return false;
-    }
-    if (index_def->GetId() == 0) {
-        PDLOG(WARNING, "index %s is primary key, cannot delete. tid %u pid %u", idx_name.c_str(), id_, pid_);
-        return false;
-    }
-    if (!index_def->IsReady()) {
-        PDLOG(WARNING, "index %s can't delete. tid %u pid %u", idx_name.c_str(), id_, pid_);
-        return false;
-    }
-    auto table_meta = GetTableMeta();
-    auto new_table_meta = std::make_shared<::openmldb::api::TableMeta>(*table_meta);
-    if (index_def->GetId() < (uint32_t)table_meta->column_key_size()) {
-        new_table_meta->mutable_column_key(index_def->GetId())->set_flag(1);
-    }
-    std::atomic_store_explicit(&table_meta_, new_table_meta, std::memory_order_release);
-    index_def->SetStatus(IndexStatus::kWaiting);
+    // TODO
     return true;
 }
 

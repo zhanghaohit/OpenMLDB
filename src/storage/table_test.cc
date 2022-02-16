@@ -181,7 +181,6 @@ TEST_F(TableTest, MultiDimissionPut0Mem) {
     MultiDimissionPut0(::openmldb::common::StorageMode::kMemory);
 }
 
-
 TEST_F(TableTest, MultiDimissionPut0Disk) {
     MultiDimissionPut0(::openmldb::common::StorageMode::kHDD);
 }
@@ -1416,8 +1415,6 @@ void TraverseIteratorCountWithLimit(::openmldb::common::StorageMode storageMode)
         ASSERT_EQ(0, codec.EncodeRow(row, &value));
         table->Put(0, value, request.dimensions());
     }
-
-    
 
     TableIterator* it = table->NewTraverseIterator(0);
     it->SeekToFirst();
