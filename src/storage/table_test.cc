@@ -695,6 +695,9 @@ void TableIteratorCount(::openmldb::common::StorageMode storageMode) {
         count++;
         it->Next();
     }
+    // We seek to pk500 9528. The next data is pk500 9527. 
+    // Then all these records with pk greater than str(500) and both timestamps are traversed
+    // So here the count is 55551
     ASSERT_EQ(55551, count);
 
     delete it;
