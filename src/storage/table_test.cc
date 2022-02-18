@@ -25,6 +25,7 @@
 #include "storage/ticket.h"
 #include "test/util.h"
 #include "storage/table.h"
+#include <atomic>
 
 #include "storage/disk_table.h"
 #include <iostream>
@@ -42,6 +43,8 @@ DECLARE_int32(gc_safe_offset);
 namespace openmldb {
 namespace storage {
 
+std::atomic<int32_t> counter(0);
+
 inline uint32_t GenRand() {
     srand((unsigned)time(NULL));
     return rand() % 10000000 + 1;
@@ -54,17 +57,11 @@ void RemoveData(const std::string& path) {
     ::openmldb::base::RemoveDir(FLAGS_ssd_root_path);
 }
 
-using ::openmldb::codec::SchemaCodec;
+using ::openmldb::codec::SchemaCodec; 
 
 class DiskTestEnvironment : public ::testing::Environment{
-    virtual void SetUp() {
-        for (int i = 1; i <= 50; i++) {
-            std::string path = FLAGS_hdd_root_path + "/" + std::to_string(i) +  "_1";
-            RemoveData(path);
-        }
-    }
     virtual void TearDown() {
-        for (int i = 1; i <= 50; i++) {
+        for (int i = 1; i <= counter; i++) {
             std::string path = FLAGS_hdd_root_path + "/" + std::to_string(i) +  "_1";
             RemoveData(path);
         }
@@ -81,7 +78,8 @@ class TableTest : public ::testing::Test {
 void put(::openmldb::common::StorageMode storageMode) {
     std::map<std::string, uint32_t> mapping;
     mapping.insert(std::make_pair("idx0", 0));
-    Table* table = Table::CreateTable("tx_log", 1, 1, 8, mapping, 10, ::openmldb::type::kAbsoluteTime, FLAGS_hdd_root_path, storageMode);
+    int id = ++counter;
+    Table* table = Table::CreateTable("tx_log", id, 1, 8, mapping, 10, ::openmldb::type::kAbsoluteTime, FLAGS_hdd_root_path, storageMode);
     table->Init();
     ASSERT_TRUE(table->Put("test", 9537, "test", 4));
     ASSERT_EQ(1, (int64_t)table->GetRecordCnt());
@@ -95,6 +93,7 @@ void put(::openmldb::common::StorageMode storageMode) {
     it->Next();
     ASSERT_FALSE(it->Valid());
     delete it;
+    delete table;
 }
 
 TEST_F(TableTest, PutMem) {
@@ -108,7 +107,8 @@ TEST_F(TableTest, PutDisk) {
 void MultiDimissionDelete(::openmldb::common::StorageMode storageMode) {
     ::openmldb::api::TableMeta* table_meta = new ::openmldb::api::TableMeta();
     table_meta->set_name("t0");
-    table_meta->set_tid(2);
+    int id = ++counter;
+    table_meta->set_tid(id);
     table_meta->set_pid(1);
     table_meta->set_seg_cnt(1);
     table_meta->set_storage_mode(storageMode);
@@ -135,6 +135,7 @@ void MultiDimissionDelete(::openmldb::common::StorageMode storageMode) {
     table->SchedGc();
     table->SchedGc();
     table->SchedGc();
+    delete table;
 }
 
 TEST_F(TableTest, MultiDimissionDeleteMem) {
@@ -150,7 +151,8 @@ void MultiDimissionPut0(::openmldb::common::StorageMode storageMode) {
     mapping.insert(std::make_pair("idx0", 0));
     mapping.insert(std::make_pair("idx1", 1));
     mapping.insert(std::make_pair("idx2", 2));
-    Table* table = Table::CreateTable("tx_log", 3, 1, 8, mapping, 10, ::openmldb::type::kAbsoluteTime, FLAGS_hdd_root_path, storageMode);
+    int id = ++counter;
+    Table* table = Table::CreateTable("tx_log", id, 1, 8, mapping, 10, ::openmldb::type::kAbsoluteTime, FLAGS_hdd_root_path, storageMode);
     table->Init();
     ASSERT_EQ(3, (int64_t)table->GetIdxCnt());
     ASSERT_EQ(0, (int64_t)table->GetRecordIdxCnt());
@@ -175,6 +177,7 @@ void MultiDimissionPut0(::openmldb::common::StorageMode storageMode) {
     ASSERT_TRUE(ok);
     ASSERT_EQ(3, (int64_t)table->GetRecordIdxCnt());
     ASSERT_EQ(1, (int64_t)table->GetRecordCnt());
+    delete table;
 }
 
 TEST_F(TableTest, MultiDimissionPut0Mem) {
@@ -188,7 +191,8 @@ TEST_F(TableTest, MultiDimissionPut0Disk) {
 void Release(::openmldb::common::StorageMode storageMode) {
     std::map<std::string, uint32_t> mapping;
     mapping.insert(std::make_pair("idx0", 0));
-    Table* table = Table::CreateTable("tx_log", 4, 1, 8, mapping, 10, ::openmldb::type::kAbsoluteTime, 
+    int id = ++counter;
+    Table* table = Table::CreateTable("tx_log", id, 1, 8, mapping, 10, ::openmldb::type::kAbsoluteTime, 
         FLAGS_hdd_root_path, storageMode);
     table->Init();
     table->Put("test", 9537, "test", 4);
@@ -209,8 +213,9 @@ TEST_F(TableTest, ReleaseDisk) {
 void IsExpired(::openmldb::common::StorageMode storageMode) {
     std::map<std::string, uint32_t> mapping;
     mapping.insert(std::make_pair("idx0", 0));
+    int id = ++counter;
     // table ttl is 1
-    Table* table = Table::CreateTable("tx_log", 5, 1, 8, mapping, 1, ::openmldb::type::kAbsoluteTime,
+    Table* table = Table::CreateTable("tx_log", id, 1, 8, mapping, 1, ::openmldb::type::kAbsoluteTime,
         FLAGS_hdd_root_path, storageMode);
     table->Init();
     uint64_t now_time = ::baidu::common::timer::get_micros() / 1000;
@@ -238,7 +243,8 @@ TEST_F(TableTest, IsExpiredDisk) {
 void Iterator(::openmldb::common::StorageMode storageMode) {
     std::map<std::string, uint32_t> mapping;
     mapping.insert(std::make_pair("idx0", 0));
-    Table* table = Table::CreateTable("tx_log", 6, 1, 8, mapping, 10, ::openmldb::type::kAbsoluteTime,
+    int id = ++counter;
+    Table* table = Table::CreateTable("tx_log", id, 1, 8, mapping, 10, ::openmldb::type::kAbsoluteTime,
         FLAGS_hdd_root_path, storageMode);
     table->Init();
 
@@ -272,7 +278,8 @@ TEST_F(TableTest, IteratorDisk) {
 void Iterator_GetSize(::openmldb::common::StorageMode storageMode) {
     std::map<std::string, uint32_t> mapping;
     mapping.insert(std::make_pair("idx0", 0));
-    Table* table = Table::CreateTable("tx_log", 7, 1, 8, mapping, 10, ::openmldb::type::kAbsoluteTime,
+    int id = ++counter;
+    Table* table = Table::CreateTable("tx_log", id, 1, 8, mapping, 10, ::openmldb::type::kAbsoluteTime,
         FLAGS_hdd_root_path, storageMode);
     table->Init();
 
@@ -326,7 +333,8 @@ TEST_F(TableTest, Iterator_GetSizeDisk) {
 void SchedGcHead(::openmldb::common::StorageMode storageMode) {
     std::map<std::string, uint32_t> mapping;
     mapping.insert(std::make_pair("idx0", 0));
-    Table* table = Table::CreateTable("tx_log", 8, 1, 8, mapping, 1, ::openmldb::type::kLatestTime,
+    int id = ++counter;
+    Table* table = Table::CreateTable("tx_log", id, 1, 8, mapping, 1, ::openmldb::type::kLatestTime,
         FLAGS_hdd_root_path, storageMode);
     table->Init();
     std::string value = ::openmldb::test::EncodeKV("test", "test1");
@@ -359,6 +367,7 @@ void SchedGcHead(::openmldb::common::StorageMode storageMode) {
     ASSERT_EQ(1, (int64_t)table->GetRecordIdxCnt());
     ASSERT_EQ(bytes, table->GetRecordByteSize());
     ASSERT_EQ(record_idx_bytes, table->GetRecordIdxByteSize());
+    delete table;
 }
 
 TEST_F(TableTest, SchedGcHeadMem) {
@@ -373,7 +382,8 @@ void SchedGcHead1(::openmldb::common::StorageMode storageMode) {
     std::map<std::string, uint32_t> mapping;
     mapping.insert(std::make_pair("idx0", 0));
     uint64_t keep_cnt = 500;
-    Table* table = Table::CreateTable("tx_log", 9, 1, 8, mapping, keep_cnt, ::openmldb::type::kLatestTime,
+    int id = ++counter;
+    Table* table = Table::CreateTable("tx_log", id, 1, 8, mapping, keep_cnt, ::openmldb::type::kLatestTime,
         FLAGS_hdd_root_path, storageMode);
     table->Init();
     uint64_t ts = 0;
@@ -405,6 +415,7 @@ void SchedGcHead1(::openmldb::common::StorageMode storageMode) {
         delete it;
     }
     table->SchedGc();
+    delete table;
 }
 
 TEST_F(TableTest, SchedGcHead1Mem) {
@@ -418,7 +429,8 @@ TEST_F(TableTest, SchedGcHead1Disk) {
 void SchedGc(::openmldb::common::StorageMode storageMode) {
     std::map<std::string, uint32_t> mapping;
     mapping.insert(std::make_pair("idx0", 0));
-    Table* table = Table::CreateTable("tx_log", 10, 1, 8, mapping, 1, ::openmldb::type::kLatestTime,
+    int id = ++counter;
+    Table* table = Table::CreateTable("tx_log", id, 1, 8, mapping, 1, ::openmldb::type::kLatestTime,
         FLAGS_hdd_root_path, storageMode);
     table->Init();
 
@@ -459,7 +471,8 @@ TEST_F(TableTest, SchedGcDisk) {
 void TableDataCnt(::openmldb::common::StorageMode storageMode) {
     std::map<std::string, uint32_t> mapping;
     mapping.insert(std::make_pair("idx0", 0));
-    Table* table = Table::CreateTable("tx_log", 11, 1, 8, mapping, 1, ::openmldb::type::kAbsoluteTime,
+    int id = ++counter;
+    Table* table = Table::CreateTable("tx_log", id, 1, 8, mapping, 1, ::openmldb::type::kAbsoluteTime,
         FLAGS_hdd_root_path, storageMode);
     table->Init();
     ASSERT_EQ((int64_t)table->GetRecordCnt(), 0);
@@ -501,7 +514,8 @@ TEST_F(TableTest, TableDataCntDisk) {
 void TableUnref(::openmldb::common::StorageMode storageMode) {
     std::map<std::string, uint32_t> mapping;
     mapping.insert(std::make_pair("idx0", 0));
-    Table* table = Table::CreateTable("tx_log", 12, 1, 8, mapping, 1, ::openmldb::type::kAbsoluteTime,
+    int id = ++counter;
+    Table* table = Table::CreateTable("tx_log", id, 1, 8, mapping, 1, ::openmldb::type::kAbsoluteTime,
         FLAGS_hdd_root_path, storageMode);
     table->Init();
     table->Put("test", 9527, "test", 4);
@@ -519,7 +533,8 @@ TEST_F(TableTest, TableUnrefDisk) {
 void TableIteratorRun(::openmldb::common::StorageMode storageMode) {
     std::map<std::string, uint32_t> mapping;
     mapping.insert(std::make_pair("idx0", 0));
-    Table* table = Table::CreateTable("tx_log", 13, 1, 1, mapping, 0, ::openmldb::type::kAbsoluteTime,
+    int id = ++counter;
+    Table* table = Table::CreateTable("tx_log", id, 1, 1, mapping, 0, ::openmldb::type::kAbsoluteTime,
         FLAGS_hdd_root_path, storageMode);
     table->Init();
 
@@ -570,7 +585,8 @@ void TableIteratorRun(::openmldb::common::StorageMode storageMode) {
     delete it;
     delete table;
 
-    Table* table1 = Table::CreateTable("tx_log", 14, 1, 1, mapping, 2, ::openmldb::type::kLatestTime,
+    id = ++counter;
+    Table* table1 = Table::CreateTable("tx_log", id, 1, 1, mapping, 2, ::openmldb::type::kLatestTime,
         FLAGS_hdd_root_path, storageMode);
     table1->Init();
 
@@ -594,7 +610,9 @@ void TableIteratorRun(::openmldb::common::StorageMode storageMode) {
     it1->Next();
     ASSERT_STREQ("pk1", it1->GetPK().c_str());
     ASSERT_EQ(100, (int64_t)it1->GetKey());
-    
+
+    delete it1;
+    delete table1;
 }
 
 TEST_F(TableTest, TableIteratorMem) {
@@ -608,7 +626,8 @@ TEST_F(TableTest, TableIteratorDisk) {
 void TableIteratorNoPk(::openmldb::common::StorageMode storageMode) {
     std::map<std::string, uint32_t> mapping;
     mapping.insert(std::make_pair("idx0", 0));
-    Table* table = Table::CreateTable("tx_log", 15, 1, 1, mapping, 0, ::openmldb::type::kAbsoluteTime,
+    int id = ++counter;
+    Table* table = Table::CreateTable("tx_log", id, 1, 1, mapping, 0, ::openmldb::type::kAbsoluteTime,
         FLAGS_hdd_root_path, storageMode);
     table->Init();
 
@@ -655,6 +674,7 @@ void TableIteratorNoPk(::openmldb::common::StorageMode storageMode) {
     ASSERT_EQ(9526, (int64_t)it->GetKey());
     
     delete it;
+    delete table;
 }
 
 TEST_F(TableTest, TableIteratorNoPkMem) {
@@ -668,7 +688,8 @@ TEST_F(TableTest, TableIteratorNoPkDisk) {
 void TableIteratorCount(::openmldb::common::StorageMode storageMode) {
     std::map<std::string, uint32_t> mapping;
     mapping.insert(std::make_pair("idx0", 0));
-    Table* table = Table::CreateTable("tx_log", 16, 1, 1, mapping, 0, ::openmldb::type::kAbsoluteTime,
+    int id = ++counter;
+    Table* table = Table::CreateTable("tx_log", id, 1, 1, mapping, 0, ::openmldb::type::kAbsoluteTime,
         FLAGS_hdd_root_path, storageMode);
     table->Init();
     for (int i = 0; i < 100000; i = i + 2) {
@@ -720,7 +741,7 @@ void TableIteratorCount(::openmldb::common::StorageMode storageMode) {
     }
     
     delete cur_it;
-    
+    delete table;
 }
 
 TEST_F(TableTest, TableIteratorCountMem) {
@@ -735,7 +756,8 @@ TEST_F(TableTest, TableIteratorCountDisk) {
 void TableIteratorTS(::openmldb::common::StorageMode storageMode) {
     ::openmldb::api::TableMeta table_meta;
     table_meta.set_name("table1");
-    table_meta.set_tid(17);
+    int id = ++counter;
+    table_meta.set_tid(id);
     table_meta.set_pid(1);
     table_meta.set_seg_cnt(8);
     table_meta.set_mode(::openmldb::api::TableMode::kTableLeader);
@@ -858,6 +880,7 @@ void TableIteratorTS(::openmldb::common::StorageMode storageMode) {
     iter = table->NewIterator(3, "mcc10", ticket);
     ASSERT_EQ(NULL, iter);
     delete iter;
+    delete table;
 }
 
 TEST_F(TableTest, TableIteratorTSMem) {
@@ -870,10 +893,10 @@ TEST_F(TableTest, TableIteratorTSDisk) {
 
 
 void TraverseIteratorCount(::openmldb::common::StorageMode storageMode) {
-    
     ::openmldb::api::TableMeta table_meta;
     table_meta.set_name("table1");
-    table_meta.set_tid(18);
+    int id = ++counter;
+    table_meta.set_tid(id);
     table_meta.set_pid(1);
     table_meta.set_seg_cnt(8);
     table_meta.set_mode(::openmldb::api::TableMode::kTableLeader);
@@ -945,13 +968,14 @@ void TraverseIteratorCount(::openmldb::common::StorageMode storageMode) {
     // refer to issue #1227
     if (storageMode == ::openmldb::common::StorageMode::kMemory) {
         ASSERT_EQ(1000, count);
-        ASSERT_EQ(1100, (int64_t)it->GetCount());
+        ASSERT_EQ(2000, (int64_t)it->GetCount());
     } else {
         ASSERT_EQ(1000, count);
         ASSERT_EQ(1000, (int64_t)it->GetCount());
     }
 
     delete it;
+    delete table;
 }
 
 TEST_F(TableTest, TraverseIteratorCountMem) {
@@ -965,7 +989,8 @@ TEST_F(TableTest, TraverseIteratorCountDisk) {
 void UpdateTTL(::openmldb::common::StorageMode storageMode) {
     ::openmldb::api::TableMeta table_meta;
     table_meta.set_name("table1");
-    table_meta.set_tid(19);
+    int id = ++counter;
+    table_meta.set_tid(id);
     table_meta.set_pid(1);
     table_meta.set_seg_cnt(8);
     table_meta.set_mode(::openmldb::api::TableMode::kTableLeader);
@@ -992,6 +1017,7 @@ void UpdateTTL(::openmldb::common::StorageMode storageMode) {
     table->SchedGc();
     ASSERT_EQ(20, (int64_t)table->GetIndex(0)->GetTTL()->abs_ttl / (10 * 6000));
     ASSERT_EQ(20, (int64_t)table->GetIndex(1)->GetTTL()->abs_ttl / (10 * 6000));
+    delete table;
 }
 
 TEST_F(TableTest, UpdateTTLMem) {
@@ -1005,7 +1031,8 @@ TEST_F(TableTest, UpdateTTLDisk) {
 void AbsAndLatSetGet(::openmldb::common::StorageMode storageMode) {
     ::openmldb::api::TableMeta table_meta;
     table_meta.set_name("table1");
-    table_meta.set_tid(20);
+    int id = ++counter;
+    table_meta.set_tid(id);
     table_meta.set_pid(1);
     table_meta.set_seg_cnt(8);
     table_meta.set_mode(::openmldb::api::TableMode::kTableLeader);
@@ -1085,6 +1112,7 @@ void AbsAndLatSetGet(::openmldb::common::StorageMode storageMode) {
     ASSERT_EQ(12, (int64_t)table->GetIndex(1)->GetTTL()->lat_ttl);
     ASSERT_EQ(2, (int64_t)table->GetIndex(2)->GetTTL()->abs_ttl / (10 * 6000));
     ASSERT_EQ(10, (int64_t)table->GetIndex(2)->GetTTL()->lat_ttl);
+    delete table;
 }
 
 TEST_F(TableTest, AbsAndLatSetGetMem) {
@@ -1098,7 +1126,8 @@ TEST_F(TableTest, AbsAndLatSetGetDisk) {
 void AbsOrLatSetGet(::openmldb::common::StorageMode storageMode) {
     ::openmldb::api::TableMeta table_meta;
     table_meta.set_name("table1");
-    table_meta.set_tid(21);
+    int id = ++counter;
+    table_meta.set_tid(id);
     table_meta.set_pid(1);
     table_meta.set_seg_cnt(8);
     table_meta.set_mode(::openmldb::api::TableMode::kTableLeader);
@@ -1173,6 +1202,8 @@ void AbsOrLatSetGet(::openmldb::common::StorageMode storageMode) {
     ASSERT_EQ(12, (int64_t)table->GetIndex(1)->GetTTL()->lat_ttl);
     ASSERT_EQ(2, (int64_t)table->GetIndex(2)->GetTTL()->abs_ttl / (10 * 6000));
     ASSERT_EQ(10, (int64_t)table->GetIndex(2)->GetTTL()->lat_ttl);
+
+    delete table;
 }
 
 TEST_F(TableTest, AbsOrLatSetGetMem) {
@@ -1186,7 +1217,8 @@ TEST_F(TableTest, AbsOrLatSetGetDisk) {
 void GcAbsOrLat(::openmldb::common::StorageMode storageMode) {
     ::openmldb::api::TableMeta table_meta;
     table_meta.set_name("table1");
-    table_meta.set_tid(22);
+    int id = ++counter;
+    table_meta.set_tid(id);
     table_meta.set_pid(1);
     table_meta.set_seg_cnt(8);
     table_meta.set_mode(::openmldb::api::TableMode::kTableLeader);
@@ -1277,6 +1309,8 @@ void GcAbsOrLat(::openmldb::common::StorageMode storageMode) {
         ASSERT_TRUE(table->IsExpire(entry));
     }
     FLAGS_gc_safe_offset = offset;
+
+    delete table;
 }
 
 TEST_F(TableTest, GcAbsOrLatMem) {
@@ -1290,7 +1324,8 @@ TEST_F(TableTest, GcAbsOrLatDisk) {
 void GcAbsAndLat(::openmldb::common::StorageMode storageMode) {
     ::openmldb::api::TableMeta table_meta;
     table_meta.set_name("table1");
-    table_meta.set_tid(23);
+    int id = ++counter;
+    table_meta.set_tid(id);
     table_meta.set_pid(1);
     table_meta.set_seg_cnt(8);
     table_meta.set_mode(::openmldb::api::TableMode::kTableLeader);
@@ -1389,6 +1424,8 @@ void GcAbsAndLat(::openmldb::common::StorageMode storageMode) {
         ASSERT_FALSE(table->IsExpire(entry));
     }
     FLAGS_gc_safe_offset = offset;
+
+    delete table;
 }
 
 TEST_F(TableTest, GcAbsAndLatMem) {
@@ -1406,7 +1443,8 @@ void TraverseIteratorCountWithLimit(::openmldb::common::StorageMode storageMode)
     
     ::openmldb::api::TableMeta table_meta;
     table_meta.set_name("table1");
-    table_meta.set_tid(24);
+    int id = ++counter;
+    table_meta.set_tid(id);
     table_meta.set_pid(1);
     table_meta.set_seg_cnt(8);
     table_meta.set_mode(::openmldb::api::TableMode::kTableLeader);
@@ -1479,19 +1517,18 @@ void TraverseIteratorCountWithLimit(::openmldb::common::StorageMode storageMode)
         ASSERT_EQ(1000, count);
         // Memtable::GetCount() may return wrong result.
         // refer to issue #1227
-        ASSERT_EQ(1100, (int64_t)it->GetCount());
+        ASSERT_EQ(2000, (int64_t)it->GetCount());
     } else {
         ASSERT_EQ(49, count);
         ASSERT_EQ(50, (int64_t)it->GetCount());
     }
 
     delete it;
-
+    delete table;
 
     FLAGS_max_traverse_cnt = old_max_traverse;
 }
 
-// TODO(litongxin): need to change memtable to make traver_cnt eq 1000
 TEST_F(TableTest, TraverseIteratorCountWithLimitMem) {
     TraverseIteratorCountWithLimit(::openmldb::common::StorageMode::kMemory);
 }
