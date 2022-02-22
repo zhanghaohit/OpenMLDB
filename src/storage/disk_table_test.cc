@@ -4,8 +4,7 @@
 // Author yangjun
 // Date 2018-01-07
 //
-
-#include "storage/disk_table.h"
+#include <gflags/gflags.h>
 #include <iostream>
 #include <utility>
 #include "base/file_util.h"
@@ -13,16 +12,18 @@
 #include "base/glog_wapper.h"  // NOLINT
 #include "common/timer.h"    // NOLINT
 #include "codec/schema_codec.h"
+#include "storage/disk_table.h"
+#include "codec/sdk_codec.h"
+#include "storage/ticket.h"
+#include "test/util.h"
 
 
 using ::openmldb::codec::SchemaCodec;
 
-
-
-
 DECLARE_string(ssd_root_path);
 DECLARE_string(hdd_root_path);
 DECLARE_uint32(max_traverse_cnt);
+DECLARE_int32(gc_safe_offset);
 
 namespace openmldb {
 namespace storage {
@@ -113,15 +114,14 @@ TEST_F(DiskTableTest, MultiDimensionPut) {
     ASSERT_EQ(3, (int64_t)table->GetIdxCnt());
     //    ASSERT_EQ(0, table->GetRecordIdxCnt());
     //    ASSERT_EQ(0, table->GetRecordCnt());
+
     Dimensions dimensions;
     ::openmldb::api::Dimension* d0 = dimensions.Add();
     d0->set_key("yjdim0");
     d0->set_idx(0);
-
     ::openmldb::api::Dimension* d1 = dimensions.Add();
     d1->set_key("yjdim1");
     d1->set_idx(1);
-
     ::openmldb::api::Dimension* d2 = dimensions.Add();
     d2->set_key("yjdim2");
     d2->set_idx(2);
@@ -741,42 +741,14 @@ TEST_F(DiskTableTest, CompactFilterMulTs) {
     table_meta.set_tid(11);
     table_meta.set_pid(1);
     table_meta.set_storage_mode(::openmldb::common::kHDD);
-    ::openmldb::common::ColumnDesc* column_desc = table_meta.add_column_desc();
-    column_desc->set_name("card");
-    column_desc->set_data_type(::openmldb::type::kString);
-    ::openmldb::common::ColumnDesc* column_desc1 = table_meta.add_column_desc();
-    column_desc1->set_name("mcc");
-    column_desc1->set_data_type(::openmldb::type::kString);
-    ::openmldb::common::ColumnDesc* column_desc2 = table_meta.add_column_desc();
-    column_desc2->set_name("ts1");
-    column_desc2->set_data_type(::openmldb::type::kBigInt);
-    // column_desc2->set_is_ts_col(true);
-    // column_desc2->set_ttl(3);
-    ::openmldb::common::ColumnDesc* column_desc3 = table_meta.add_column_desc();
-    column_desc3->set_name("ts2");
-    column_desc3->set_data_type(::openmldb::type::kBigInt);
-    // column_desc3->set_is_ts_col(true);
-    // column_desc3->set_ttl(5); 
-    ::openmldb::common::ColumnKey* column_key = table_meta.add_column_key();
-    column_key->set_index_name("card");
-    column_key->set_ts_name("ts1");
-    auto ttl = column_key->mutable_ttl();
-    ttl->set_ttl_type(::openmldb::type::TTLType::kAbsoluteTime);
-    ttl->set_abs_ttl(3);
-    
-    ::openmldb::common::ColumnKey* column_key2 = table_meta.add_column_key();
-    column_key2->set_index_name("card1");
-    column_key2->set_ts_name("ts2");
-    auto ttl3 = column_key2->mutable_ttl();
-    ttl3->set_ttl_type(::openmldb::type::TTLType::kAbsoluteTime);
-    ttl3->set_abs_ttl(5);
+    SchemaCodec::SetColumnDesc(table_meta.add_column_desc(), "card", ::openmldb::type::kString);
+    SchemaCodec::SetColumnDesc(table_meta.add_column_desc(), "mcc", ::openmldb::type::kString);
+    SchemaCodec::SetColumnDesc(table_meta.add_column_desc(), "ts1", ::openmldb::type::kBigInt);
+    SchemaCodec::SetColumnDesc(table_meta.add_column_desc(), "ts2", ::openmldb::type::kBigInt);
+    SchemaCodec::SetIndex(table_meta.add_column_key(), "card", "card", "ts1", ::openmldb::type::kAbsoluteTime, 3, 0);
+    SchemaCodec::SetIndex(table_meta.add_column_key(), "card1", "card", "ts2", ::openmldb::type::kAbsoluteTime, 5, 0);
+    SchemaCodec::SetIndex(table_meta.add_column_key(), "mcc", "mcc", "ts2", ::openmldb::type::kAbsoluteTime, 5, 0);
 
-    ::openmldb::common::ColumnKey* column_key1 = table_meta.add_column_key();
-    column_key1->set_index_name("mcc");
-    column_key1->set_ts_name("ts2");
-    auto ttl2 = column_key1->mutable_ttl();
-    ttl2->set_ttl_type(::openmldb::type::TTLType::kAbsoluteTime);
-    ttl2->set_abs_ttl(5);
 
     DiskTable* table = new DiskTable(table_meta, FLAGS_hdd_root_path);
     ASSERT_TRUE(table->Init());
@@ -810,14 +782,12 @@ TEST_F(DiskTableTest, CompactFilterMulTs) {
     TableIterator* iter = table->NewIterator(0, "card0", ticket);
     iter->SeekToFirst();
     while (iter->Valid()) {
-        // printf("key %s ts %lu\n", iter->GetPK().c_str(), iter->GetKey());
         iter->Next();
     }
     delete iter;
     iter = table->NewIterator(2, "mcc0", ticket);
     iter->SeekToFirst();
     while (iter->Valid()) {
-        // printf("key %s ts %lu\n", iter->GetPK().c_str(), iter->GetKey());
         iter->Next();
     }
     delete iter;
@@ -840,9 +810,6 @@ TEST_F(DiskTableTest, CompactFilterMulTs) {
             for (int i = 0; i < 10; i++) {
                 std::string e_value = "value" + std::to_string(i);
                 std::string value;
-                // printf("idx:%d i:%d key:%s ts:%lu\n", idx, i, key.c_str(), ts
-                // - i); printf("idx:%d i:%d key:%s ts:%lu\n", idx, i,
-                // key1.c_str(), ts - i);
                 ASSERT_TRUE(table->Get(0, key, ts - i, value));
                 ASSERT_EQ(e_value, value);
                 ASSERT_TRUE(table->Get(1, key, ts - i, value));
@@ -886,11 +853,7 @@ TEST_F(DiskTableTest, CompactFilterMulTs) {
                     ASSERT_EQ(e_value, value);
                     ASSERT_TRUE(table->Get(2, key1, cur_ts, value));
                 } else {
-                    // printf("idx:%lu i:%d key:%s ts:%lu\n", idx, i,
-                    // key.c_str(), cur_ts);
                     ASSERT_FALSE(table->Get(1, key, cur_ts, value));
-                    // printf("idx:%lu i:%d key:%s ts:%lu\n", idx, i,
-                    // key1.c_str(), cur_ts);
                     ASSERT_FALSE(table->Get(2, key1, cur_ts, value));
                 }
             }
@@ -935,6 +898,7 @@ TEST_F(DiskTableTest, GcHeadMulTs) {
     // column_desc3->set_ttl(5); 
     ::openmldb::common::ColumnKey* column_key = table_meta.add_column_key();
     column_key->set_index_name("card");
+    column_key->add_col_name("card");
     column_key->set_ts_name("ts1");
     auto ttl = column_key->mutable_ttl();
     ttl->set_ttl_type(::openmldb::type::TTLType::kLatestTime);
@@ -942,6 +906,7 @@ TEST_F(DiskTableTest, GcHeadMulTs) {
     
     ::openmldb::common::ColumnKey* column_key2 = table_meta.add_column_key();
     column_key2->set_index_name("card1");
+    column_key2->add_col_name("card");
     column_key2->set_ts_name("ts2");
     auto ttl3 = column_key2->mutable_ttl();
     ttl3->set_ttl_type(::openmldb::type::TTLType::kLatestTime);
@@ -949,6 +914,7 @@ TEST_F(DiskTableTest, GcHeadMulTs) {
 
     ::openmldb::common::ColumnKey* column_key1 = table_meta.add_column_key();
     column_key1->set_index_name("mcc");
+    column_key1->add_col_name("mcc");
     column_key1->set_ts_name("ts2");
     auto ttl2 = column_key1->mutable_ttl();
     ttl2->set_ttl_type(::openmldb::type::TTLType::kLatestTime);

@@ -236,6 +236,7 @@ bool DiskTable::Put(uint64_t time, const std::string& value,
     Dimensions::const_iterator it = dimensions.begin();
     for (; it != dimensions.end(); ++it) {
         std::shared_ptr<IndexDef> index_def = GetIndex(it->idx());
+        int32_t inner_pos = table_index_.GetInnerIndexPos(it->idx());
         if (!index_def) {
             PDLOG(
                 WARNING,
@@ -243,9 +244,16 @@ bool DiskTable::Put(uint64_t time, const std::string& value,
                 it->key().c_str(), it->idx(), id_, pid_);
             return false;
         }
-        std::string combine_key = CombineKeyTs(it->key(), time);
+        auto inner_index = table_index_.GetInnerIndex(inner_pos);
+        auto ts_col = index_def->GetTsColumn();
+        std::string combine_key;
+        if (inner_index->GetIndex().size() > 1 && ts_col) {
+            combine_key = CombineKeyTs(it->key(), time, ts_col->GetId());
+        } else {
+            combine_key = CombineKeyTs(it->key(), time);
+        }
         rocksdb::Slice spk = rocksdb::Slice(combine_key);
-        batch.Put(cf_hs_[it->idx() + 1], spk, value);
+        batch.Put(cf_hs_[inner_pos + 1], spk, value);
     }
     s = db_->Write(write_opts_, &batch);
     if (s.ok()) {
@@ -629,6 +637,12 @@ TableIterator* DiskTable::NewIterator(uint32_t idx, const std::string& pk,
     ro.prefix_same_as_start = true;
     ro.pin_data = true;
     rocksdb::Iterator* it = db_->NewIterator(ro, cf_hs_[inner_pos + 1]);
+    if (inner_index && inner_index->GetIndex().size() > 1) {
+        auto ts_col = index_def->GetTsColumn();
+        if (ts_col) {
+            return new DiskTableIterator(db_, it, snapshot, pk, ts_col->GetId());
+        }
+    }
     return new DiskTableIterator(db_, it, snapshot, pk);
 }
 
@@ -677,6 +691,13 @@ TableIterator* DiskTable::NewTraverseIterator(uint32_t index) {
     // ro.prefix_same_as_start = true;
     ro.pin_data = true;
     rocksdb::Iterator* it = db_->NewIterator(ro, cf_hs_[inner_pos + 1]);
+    if (inner_index && inner_index->GetIndex().size() > 1) {
+        auto ts_col = index_def->GetTsColumn();
+        if (ts_col) {
+            return new DiskTableTraverseIterator(db_, it, snapshot, ttl_type_,
+                                                expire_time, expire_cnt, ts_col->GetId());
+        }
+    }
     return new DiskTableTraverseIterator(db_, it, snapshot, ttl_type_,
                                          expire_time, expire_cnt);
 }
@@ -814,6 +835,21 @@ void DiskTableTraverseIterator::Next() {
         std::string last_pk = pk_;
         uint8_t cur_ts_idx = UINT8_MAX;
         traverse_cnt_++;
+        ParseKeyAndTs(has_ts_idx_, it_->key(), pk_, ts_, cur_ts_idx);
+        if (last_pk == pk_) {
+            if (has_ts_idx_ && (cur_ts_idx != ts_idx_)) {
+                traverse_cnt_--;
+                continue;
+            }
+            record_idx_++;
+        } else {
+            record_idx_ = 0;
+            if (has_ts_idx_ && (cur_ts_idx != ts_idx_)) {
+                traverse_cnt_--;
+                continue;
+            }
+            record_idx_ = 1;
+        }
         if (traverse_cnt_ >= FLAGS_max_traverse_cnt) {
             if (has_ts_idx_) {
                 uint64_t ts = 0;
@@ -824,19 +860,6 @@ void DiskTableTraverseIterator::Next() {
                 }
             }
             break;
-        }
-        ParseKeyAndTs(has_ts_idx_, it_->key(), pk_, ts_, cur_ts_idx);
-        if (last_pk == pk_) {
-            if (has_ts_idx_ && (cur_ts_idx != ts_idx_)) {
-                continue;
-            }
-            record_idx_++;
-        } else {
-            record_idx_ = 0;
-            if (has_ts_idx_ && (cur_ts_idx != ts_idx_)) {
-                continue;
-            }
-            record_idx_ = 1;
         }
         if (IsExpired()) {
             NextPK();
@@ -1021,6 +1044,36 @@ void DiskTableTraverseIterator::NextPK() {
             it_->Next();
         }
     }
+}
+
+bool DiskTable::DeleteIndex(const std::string& idx_name) {
+    // TODO(litongxin)
+    return true;
+}
+
+uint64_t DiskTable::GetRecordIdxCnt() {
+    // TODO(litongxin)
+    return 0;
+}
+
+bool DiskTable::GetRecordIdxCnt(uint32_t idx, uint64_t** stat, uint32_t* size) {
+    // TODO(litongxin)
+    return true;
+}
+
+uint64_t DiskTable::GetRecordPkCnt() {
+    // TODO(litongxin)
+    return 0;
+}
+
+uint64_t DiskTable::GetRecordIdxByteSize() {
+    // TODO(litongxin)
+    return 0;
+}
+
+uint64_t DiskTable::Release() {
+    // TODO(litongxin)
+    return 0;
 }
 
 }  // namespace storage
