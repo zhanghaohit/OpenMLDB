@@ -31,6 +31,10 @@ set(OPENMLDB_VERSION_MAJOR 0)
 set(OPENMLDB_VERSION_MINOR 5)
 set(OPENMLDB_VERSION_BUG 0)
 
+
+if (NOT DEFINED CMAKE_PREFIX_PATH)
+    set(CMAKE_PREFIX_PATH ${CMAKE_SOURCE_DIR}/.deps/usr)
+endif()
 function(get_commitid CODE_DIR COMMIT_ID)
     find_package(Git REQUIRED)
     execute_process(

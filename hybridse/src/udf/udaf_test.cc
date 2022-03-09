@@ -217,7 +217,7 @@ TEST_F(UdafTest, MaxWhereTest) {
 }
 
 TEST_F(UdafTest, list2_test) {
-    CheckUdf<int32_t, ListRef<int32_t>>("list_2", 2, MakeList<int32_t>({1, 2, 3, 4}));
+    CheckUdf<int32_t, ListRef<int32_t>>("list_2", 3, MakeList<int32_t>({1, 2, 3, 4}));
 }
 
 TEST_F(UdafTest, avg_test) {

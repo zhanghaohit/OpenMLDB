@@ -29,6 +29,7 @@
 #include "udf/containers.h"
 #include "udf/udf.h"
 #include "udf/udf_registry.h"
+#include "vm/jit_runtime.h"
 
 using hybridse::codec::Date;
 using hybridse::codec::StringRef;
@@ -2005,12 +2006,12 @@ struct ListTwo {
         return state;
     }
 
-    static void Output(ListTwoState* state, int32_t* output) { *output = state->list[2]; }
+    static int32_t Output(ListTwoState* state) { return state->list.size() > 2 ? state->list[2] : 0; }
 };
 
 void DefaultUdfLibrary::InitUdaf() {
     RegisterUdaf("list_2")
-        .templates<Opaque<int32_t>, Opaque<ListTwoState>, int32_t>()
+        .templates<int32_t, Opaque<ListTwoState>, int32_t>()
         .init("list_2_init", ListTwo::Init)
         .update("list_2_update", ListTwo::Update)
         .output("list_2_output", ListTwo::Output)
