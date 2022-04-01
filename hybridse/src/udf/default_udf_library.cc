@@ -29,6 +29,7 @@
 #include "udf/containers.h"
 #include "udf/udf.h"
 #include "udf/udf_registry.h"
+#include "vm/jit_runtime.h"
 
 using openmldb::base::Date;
 using openmldb::base::StringRef;
@@ -1988,7 +1989,34 @@ void DefaultUdfLibrary::Init() {
     InitFeatureZero();
 }
 
+class ListTwoState : public base::FeBaseObject {
+ public:
+    std::vector<int32_t> list;
+};
+
+struct ListTwo {
+    static ListTwoState* Init() {
+        auto list = new ListTwoState();
+        vm::JitRuntime::get()->AddManagedObject(list);
+        return list;
+    }
+
+    static ListTwoState* Update(ListTwoState* state, int32_t val) {
+        state->list.push_back(val);
+        return state;
+    }
+
+    static int32_t Output(ListTwoState* state) { return state->list.size() > 2 ? state->list[2] : 0; }
+};
+
 void DefaultUdfLibrary::InitUdaf() {
+    RegisterUdaf("list_2")
+        .templates<int32_t, Opaque<ListTwoState>, int32_t>()
+        .init("list_2_init", ListTwo::Init)
+        .update("list_2_update", ListTwo::Update)
+        .output("list_2_output", ListTwo::Output)
+        .doc("");
+
     RegisterUdafTemplate<SumUdafDef>("sum")
         .doc(R"(
             @brief Compute sum of values.

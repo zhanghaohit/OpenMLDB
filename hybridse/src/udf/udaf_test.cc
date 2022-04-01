@@ -216,6 +216,10 @@ TEST_F(UdafTest, MaxWhereTest) {
         "max_where", 3, MakeList<Nullable<int32_t>>({1, nullptr, 3}), MakeList<Nullable<bool>>({true, true, true}));
 }
 
+TEST_F(UdafTest, list2_test) {
+    CheckUdf<int32_t, ListRef<int32_t>>("list_2", 3, MakeList<int32_t>({1, 2, 3, 4}));
+}
+
 TEST_F(UdafTest, avg_test) {
     CheckUdf<double, ListRef<int16_t>>("avg", 2.5,
                                        MakeList<int16_t>({1, 2, 3, 4}));
