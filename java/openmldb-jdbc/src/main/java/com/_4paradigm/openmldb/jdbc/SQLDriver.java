@@ -132,13 +132,31 @@ public class SQLDriver implements Driver {
         if (prop != null) {
             option.setZkCluster(prop);
         } else {
-            throw new IllegalArgumentException("must set param 'zk'");
+            // throw new IllegalArgumentException("must set param 'zk'");
+            System.out.println("WARN: zk is not set");
         }
         prop = properties.getProperty("zkPath");
         if (prop != null) {
             option.setZkPath(prop);
         } else {
-            throw new IllegalArgumentException("must set param 'zkPath'");
+            // throw new IllegalArgumentException("must set param 'zkPath'");
+            System.out.println("WARN: zkPath is not set");
+        }
+
+        prop = properties.getProperty("host");
+        if (prop != null) {
+            option.setHost(prop);
+        } else {
+            // throw new IllegalArgumentException("must set param 'zk'");
+            System.out.println("WARN: host is not set");
+        }
+
+        prop = properties.getProperty("port");
+        if (prop != null) {
+            option.setPort(prop);
+        } else {
+            // throw new IllegalArgumentException("must set param 'zk'");
+            System.out.println("WARN: port is not set");
         }
 
         // optionals
