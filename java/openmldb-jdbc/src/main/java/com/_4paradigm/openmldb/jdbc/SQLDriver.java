@@ -153,7 +153,7 @@ public class SQLDriver implements Driver {
 
         prop = properties.getProperty("port");
         if (prop != null) {
-            option.setPort(prop);
+            option.setPort(Integer.parseInt(prop));
         } else {
             // throw new IllegalArgumentException("must set param 'zk'");
             System.out.println("WARN: port is not set");

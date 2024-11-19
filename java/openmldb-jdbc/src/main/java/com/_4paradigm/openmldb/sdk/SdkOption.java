@@ -25,8 +25,6 @@ import com._4paradigm.openmldb.StandaloneOptions;
 
 @Data
 public class SdkOption implements Serializable {
-    // TODO(hw): set isClusterMode automatically
-    private boolean isClusterMode = true;
     // options for cluster mode
     private String zkCluster = "";
     private String zkPath = "";
@@ -60,6 +58,10 @@ public class SdkOption implements Serializable {
         if (!getPassword().isEmpty()) {
             opt.setPassword(getPassword());
         }
+    }
+
+    public boolean isClusterMode() {
+        return zkCluster != null && !zkCluster.isEmpty();
     }
 
     public SQLRouterOptions buildSQLRouterOptions() throws SqlException {
