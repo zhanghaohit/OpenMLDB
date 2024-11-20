@@ -23,6 +23,7 @@ import com._4paradigm.openmldb.sdk.impl.SqlClusterExecutor;
 
 import java.sql.*;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 public class SQLDriver implements Driver {
@@ -34,6 +35,8 @@ public class SQLDriver implements Driver {
         }
     }
 
+    private final AtomicInteger counter = new AtomicInteger(0);
+
     /**
      * Connect to the given connection string.
      *
@@ -42,9 +45,10 @@ public class SQLDriver implements Driver {
      * @throws SQLException if it is not possible to connect
      */
     @Override
-    public Connection connect(String url, Properties info) throws SQLException { 
+    public Connection connect(String url, Properties info) throws SQLException {
         // Merge connectProperties (from URL) and supplied properties from user.
         // TODO(hw): only cluster mode now, support StandaloneOptions later
+        System.out.println(counter.get() + ": connect to " + url);
         if (info == null) {
             info = new Properties();
         }
@@ -144,8 +148,12 @@ public class SQLDriver implements Driver {
         }
 
         prop = properties.getProperty("host");
+        int curr_counter = counter.getAndIncrement();
         if (prop != null) {
-            option.setHost(prop);
+            String[] hosts = prop.split(",");
+            String host = hosts[curr_counter % hosts.length];
+            System.out.println(curr_counter + ": Connect to host " + host);
+            option.setHost(host);
         } else {
             // throw new IllegalArgumentException("must set param 'zk'");
             System.out.println("WARN: host is not set");
@@ -153,7 +161,10 @@ public class SQLDriver implements Driver {
 
         prop = properties.getProperty("port");
         if (prop != null) {
-            option.setPort(Integer.parseInt(prop));
+            String[] ports = prop.split(",");
+            int port = Integer.parseInt(ports[curr_counter % ports.length]);
+            System.out.println(curr_counter + ": Connect to port " + port);
+            option.setPort(port);
         } else {
             // throw new IllegalArgumentException("must set param 'zk'");
             System.out.println("WARN: port is not set");
