@@ -74,8 +74,15 @@ class SqlCompileInfo : public CompileInfo {
     }
     static SqlCompileInfo* CastFrom(CompileInfo* node) { return dynamic_cast<SqlCompileInfo*>(node); }
 
+    bool compiled() const { return compiled_.load(); }
+
+    void set_compiled() volatile {
+        compiled_.store(true);
+    }
+
  private:
     hybridse::vm::SqlContext sql_ctx;
+    std::atomic<bool> compiled_{false};
 };
 
 class SqlCompiler {

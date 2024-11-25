@@ -16,6 +16,7 @@
 
 #include "vm/engine.h"
 
+#include <boost/algorithm/string.hpp>
 #include <string>
 #include <utility>
 #include <vector>
@@ -63,6 +64,8 @@ static bool InitializeLLVM() {
     LLVMInitializeNativeTarget();
     LLVMInitializeNativeAsmPrinter();
     LOG(INFO) << "initialize llvm native target and asm printer, takes " << absl::Now() - begin;
+    udf::DefaultUdfLibrary::get();
+    vm::GlobalJIT();
     return true;
 }
 
@@ -145,11 +148,17 @@ bool Engine::IsCompatibleCache(RunSession& session,  // NOLINT
 }
 
 absl::Status Engine::Get2(absl::string_view sql, absl::string_view db, RunSessionBuilder* session_builder) {
-    std::shared_ptr<CompileInfo> cached_info =
-        GetCacheLocked(std::string(db), std::string(sql), session_builder->engine_mode());
+    std::string sql_key = std::string(sql);
+    boost::trim(sql_key);
+    // LOG(INFO) << "Get2 = " << session_builder->engine_mode() << ": " << sql_key << ", len " << sql_key.size();
+    std::shared_ptr<SqlCompileInfo> cached_info = std::dynamic_pointer_cast<SqlCompileInfo>(
+        GetCacheLocked(std::string(db), sql_key, session_builder->engine_mode()));
+    // LOG(INFO) << "cached_info = " << cached_info;
 
     base::Status status;
     if (cached_info) {
+        // another thread is compiling the same sql, wait for it
+        while (!cached_info->compiled());
         // FIXME: add IsCompatibleCache check
         session_builder->SetEngineMode(cached_info->GetEngineMode());
         session_builder->SetCompileInfo(cached_info);
@@ -160,8 +169,9 @@ absl::Status Engine::Get2(absl::string_view sql, absl::string_view db, RunSessio
 
     status = base::Status::OK();
     std::shared_ptr<SqlCompileInfo> info = std::make_shared<SqlCompileInfo>();
+    // LOG(INFO) << "new cached_info = " << info;
     auto& sql_context = info->get_sql_context();
-    sql_context.sql = sql;
+    sql_context.sql = sql_key;
     sql_context.db = db;
     sql_context.engine_mode = session_builder->engine_mode();
     sql_context.is_cluster_optimized = options_.IsClusterOptimzied();
@@ -174,6 +184,7 @@ absl::Status Engine::Get2(absl::string_view sql, absl::string_view db, RunSessio
     } else if (session_builder->engine_mode() == kBatchRequestMode) {
         sql_context.batch_request_info.common_column_indices = session_builder->common_column_indices();
     }
+    SetCacheLocked(std::string(db), sql_key, origin_mode, info);
 
     SqlCompiler compiler(std::atomic_load_explicit(&cl_, std::memory_order_acquire), options_.IsKeepIr(), false,
                          options_.IsPlanOnly());
@@ -197,7 +208,8 @@ absl::Status Engine::Get2(absl::string_view sql, absl::string_view db, RunSessio
         }
     }
 
-    SetCacheLocked(std::string(db), std::string(sql), origin_mode, info);
+    // SetCacheLocked(std::string(db), sql_key, origin_mode, info);
+    info->set_compiled();
     session_builder->SetCompileInfo(info);
     if (session_builder->debug()) {
         std::ostringstream plan_oss;
@@ -214,8 +226,11 @@ absl::Status Engine::Get2(absl::string_view sql, absl::string_view db, RunSessio
 
 bool Engine::Get(const std::string& sql, const std::string& db, RunSession& session,
                  base::Status& status) {  // NOLINT (runtime/references)
-    std::shared_ptr<CompileInfo> cached_info = GetCacheLocked(db, sql, session.engine_mode());
-    if (cached_info && IsCompatibleCache(session, cached_info, status)) {
+    // LOG(INFO) << "Get = " << sql;
+    std::shared_ptr<SqlCompileInfo> cached_info =
+        std::dynamic_pointer_cast<SqlCompileInfo>(GetCacheLocked(db, sql, session.engine_mode()));
+    if (cached_info) {
+        while (!cached_info->compiled());
         session.SetCompileInfo(cached_info);
         return true;
     }
@@ -268,6 +283,7 @@ bool Engine::Get(const std::string& sql, const std::string& db, RunSession& sess
         }
     }
 
+    info->set_compiled();
     SetCacheLocked(db, sql, session.engine_mode(), info);
     session.SetCompileInfo(info);
     if (session.is_debug_) {
