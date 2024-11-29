@@ -19,6 +19,7 @@
 
 #include <memory>
 #include <string>
+#include <mutex>
 
 #include "base/fe_status.h"
 #include "llvm/IR/Module.h"
@@ -79,6 +80,8 @@ class SqlCompileInfo : public CompileInfo {
     void set_compiled() volatile {
         compiled_.store(true);
     }
+
+    std::mutex mu_;
 
  private:
     hybridse::vm::SqlContext sql_ctx;

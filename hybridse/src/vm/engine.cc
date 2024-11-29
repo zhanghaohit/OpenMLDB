@@ -158,7 +158,9 @@ absl::Status Engine::Get2(absl::string_view sql, absl::string_view db, RunSessio
     base::Status status;
     if (cached_info) {
         // another thread is compiling the same sql, wait for it
-        while (!cached_info->compiled());
+        if (!cached_info->compiled()) {
+            std::lock_guard<std::mutex> lock(cached_info->mu_);
+        }
         // FIXME: add IsCompatibleCache check
         session_builder->SetEngineMode(cached_info->GetEngineMode());
         session_builder->SetCompileInfo(cached_info);
@@ -169,6 +171,7 @@ absl::Status Engine::Get2(absl::string_view sql, absl::string_view db, RunSessio
 
     status = base::Status::OK();
     std::shared_ptr<SqlCompileInfo> info = std::make_shared<SqlCompileInfo>();
+    std::lock_guard<std::mutex> lock(info->mu_);
     // LOG(INFO) << "new cached_info = " << info;
     auto& sql_context = info->get_sql_context();
     sql_context.sql = sql_key;
